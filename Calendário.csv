@@ -1,0 +1,241 @@
+jornada,casa,fora
+1,S.C. Castêlo Maia,A.D. Grijó
+1,F.C. Infesta,"Varzim S.C. ""B"" - SDUQ"
+1,C.D. Candal,Valadares Gaia F.C. - SAD
+1,A.R.D.C. Gondim Maia,F.C. Pedroso
+1,Pedrouços Atl. C.,S.C. Dragões Sandinenses
+1,U.D. Beiriz,F.C. Avintes
+1,"S.C. Salgueiros ""B"" - SAD",C.F. Oliveira Douro
+1,Atl. C. Bougadense,Desp. Leça Balio
+2,A.D. Grijó,Atl. C. Bougadense
+2,"Varzim S.C. ""B"" - SDUQ",S.C. Castêlo Maia
+2,Valadares Gaia F.C. - SAD,F.C. Infesta
+2,F.C. Pedroso,C.D. Candal
+2,S.C. Dragões Sandinenses,A.R.D.C. Gondim Maia
+2,F.C. Avintes,Pedrouços Atl. C.
+2,C.F. Oliveira Douro,U.D. Beiriz
+2,Desp. Leça Balio,"S.C. Salgueiros ""B"" - SAD"
+3,A.D. Grijó,"Varzim S.C. ""B"" - SDUQ"
+3,S.C. Castêlo Maia,Valadares Gaia F.C. - SAD
+3,F.C. Infesta,F.C. Pedroso
+3,C.D. Candal,S.C. Dragões Sandinenses
+3,A.R.D.C. Gondim Maia,F.C. Avintes
+3,Pedrouços Atl. C.,C.F. Oliveira Douro
+3,U.D. Beiriz,Desp. Leça Balio
+3,Atl. C. Bougadense,"S.C. Salgueiros ""B"" - SAD"
+4,"Varzim S.C. ""B"" - SDUQ",Atl. C. Bougadense
+4,Valadares Gaia F.C. - SAD,A.D. Grijó
+4,F.C. Pedroso,S.C. Castêlo Maia
+4,S.C. Dragões Sandinenses,F.C. Infesta
+4,F.C. Avintes,C.D. Candal
+4,C.F. Oliveira Douro,A.R.D.C. Gondim Maia
+4,Desp. Leça Balio,Pedrouços Atl. C.
+4,"S.C. Salgueiros ""B"" - SAD",U.D. Beiriz
+5,"Varzim S.C. ""B"" - SDUQ",Valadares Gaia F.C. - SAD
+5,A.D. Grijó,F.C. Pedroso
+5,S.C. Castêlo Maia,S.C. Dragões Sandinenses
+5,F.C. Infesta,F.C. Avintes
+5,C.D. Candal,C.F. Oliveira Douro
+5,A.R.D.C. Gondim Maia,Desp. Leça Balio
+5,Pedrouços Atl. C.,"S.C. Salgueiros ""B"" - SAD"
+5,Atl. C. Bougadense,U.D. Beiriz
+6,Valadares Gaia F.C. - SAD,Atl. C. Bougadense
+6,F.C. Pedroso,"Varzim S.C. ""B"" - SDUQ"
+6,S.C. Dragões Sandinenses,A.D. Grijó
+6,F.C. Avintes,S.C. Castêlo Maia
+6,C.F. Oliveira Douro,F.C. Infesta
+6,Desp. Leça Balio,C.D. Candal
+6,"S.C. Salgueiros ""B"" - SAD",A.R.D.C. Gondim Maia
+6,U.D. Beiriz,Pedrouços Atl. C.
+7,Valadares Gaia F.C. - SAD,F.C. Pedroso
+7,"Varzim S.C. ""B"" - SDUQ",S.C. Dragões Sandinenses
+7,A.D. Grijó,F.C. Avintes
+7,S.C. Castêlo Maia,C.F. Oliveira Douro
+7,F.C. Infesta,Desp. Leça Balio
+7,C.D. Candal,"S.C. Salgueiros ""B"" - SAD"
+7,A.R.D.C. Gondim Maia,U.D. Beiriz
+7,Atl. C. Bougadense,Pedrouços Atl. C.
+8,F.C. Pedroso,Atl. C. Bougadense
+8,S.C. Dragões Sandinenses,Valadares Gaia F.C. - SAD
+8,F.C. Avintes,"Varzim S.C. ""B"" - SDUQ"
+8,C.F. Oliveira Douro,A.D. Grijó
+8,Desp. Leça Balio,S.C. Castêlo Maia
+8,"S.C. Salgueiros ""B"" - SAD",F.C. Infesta
+8,U.D. Beiriz,C.D. Candal
+8,Pedrouços Atl. C.,A.R.D.C. Gondim Maia
+9,F.C. Pedroso,S.C. Dragões Sandinenses
+9,Valadares Gaia F.C. - SAD,F.C. Avintes
+9,"Varzim S.C. ""B"" - SDUQ",C.F. Oliveira Douro
+9,A.D. Grijó,Desp. Leça Balio
+9,S.C. Castêlo Maia,"S.C. Salgueiros ""B"" - SAD"
+9,F.C. Infesta,U.D. Beiriz
+9,C.D. Candal,Pedrouços Atl. C.
+9,Atl. C. Bougadense,A.R.D.C. Gondim Maia
+10,S.C. Dragões Sandinenses,Atl. C. Bougadense
+10,F.C. Avintes,F.C. Pedroso
+10,C.F. Oliveira Douro,Valadares Gaia F.C. - SAD
+10,Desp. Leça Balio,"Varzim S.C. ""B"" - SDUQ"
+10,"S.C. Salgueiros ""B"" - SAD",A.D. Grijó
+10,U.D. Beiriz,S.C. Castêlo Maia
+10,Pedrouços Atl. C.,F.C. Infesta
+10,A.R.D.C. Gondim Maia,C.D. Candal
+11,S.C. Dragões Sandinenses,F.C. Avintes
+11,F.C. Pedroso,C.F. Oliveira Douro
+11,Valadares Gaia F.C. - SAD,Desp. Leça Balio
+11,"Varzim S.C. ""B"" - SDUQ","S.C. Salgueiros ""B"" - SAD"
+11,A.D. Grijó,U.D. Beiriz
+11,S.C. Castêlo Maia,Pedrouços Atl. C.
+11,F.C. Infesta,A.R.D.C. Gondim Maia
+11,Atl. C. Bougadense,C.D. Candal
+12,F.C. Avintes,Atl. C. Bougadense
+12,C.F. Oliveira Douro,S.C. Dragões Sandinenses
+12,Desp. Leça Balio,F.C. Pedroso
+12,"S.C. Salgueiros ""B"" - SAD",Valadares Gaia F.C. - SAD
+12,U.D. Beiriz,"Varzim S.C. ""B"" - SDUQ"
+12,Pedrouços Atl. C.,A.D. Grijó
+12,A.R.D.C. Gondim Maia,S.C. Castêlo Maia
+12,C.D. Candal,F.C. Infesta
+13,F.C. Avintes,C.F. Oliveira Douro
+13,S.C. Dragões Sandinenses,Desp. Leça Balio
+13,F.C. Pedroso,"S.C. Salgueiros ""B"" - SAD"
+13,Valadares Gaia F.C. - SAD,U.D. Beiriz
+13,"Varzim S.C. ""B"" - SDUQ",Pedrouços Atl. C.
+13,A.D. Grijó,A.R.D.C. Gondim Maia
+13,S.C. Castêlo Maia,C.D. Candal
+13,Atl. C. Bougadense,F.C. Infesta
+14,Atl. C. Bougadense,C.F. Oliveira Douro
+14,Desp. Leça Balio,F.C. Avintes
+14,"S.C. Salgueiros ""B"" - SAD",S.C. Dragões Sandinenses
+14,U.D. Beiriz,F.C. Pedroso
+14,Pedrouços Atl. C.,Valadares Gaia F.C. - SAD
+14,A.R.D.C. Gondim Maia,"Varzim S.C. ""B"" - SDUQ"
+14,C.D. Candal,A.D. Grijó
+14,F.C. Infesta,S.C. Castêlo Maia
+15,C.F. Oliveira Douro,Desp. Leça Balio
+15,F.C. Avintes,"S.C. Salgueiros ""B"" - SAD"
+15,S.C. Dragões Sandinenses,U.D. Beiriz
+15,F.C. Pedroso,Pedrouços Atl. C.
+15,Valadares Gaia F.C. - SAD,A.R.D.C. Gondim Maia
+15,"Varzim S.C. ""B"" - SDUQ",C.D. Candal
+15,A.D. Grijó,F.C. Infesta
+15,S.C. Castêlo Maia,Atl. C. Bougadense
+16,A.D. Grijó,S.C. Castêlo Maia
+16,"Varzim S.C. ""B"" - SDUQ",F.C. Infesta
+16,Valadares Gaia F.C. - SAD,C.D. Candal
+16,F.C. Pedroso,A.R.D.C. Gondim Maia
+16,S.C. Dragões Sandinenses,Pedrouços Atl. C.
+16,F.C. Avintes,U.D. Beiriz
+16,C.F. Oliveira Douro,"S.C. Salgueiros ""B"" - SAD"
+16,Desp. Leça Balio,Atl. C. Bougadense
+17,Atl. C. Bougadense,A.D. Grijó
+17,S.C. Castêlo Maia,"Varzim S.C. ""B"" - SDUQ"
+17,F.C. Infesta,Valadares Gaia F.C. - SAD
+17,C.D. Candal,F.C. Pedroso
+17,A.R.D.C. Gondim Maia,S.C. Dragões Sandinenses
+17,Pedrouços Atl. C.,F.C. Avintes
+17,U.D. Beiriz,C.F. Oliveira Douro
+17,"S.C. Salgueiros ""B"" - SAD",Desp. Leça Balio
+18,"Varzim S.C. ""B"" - SDUQ",A.D. Grijó
+18,Valadares Gaia F.C. - SAD,S.C. Castêlo Maia
+18,F.C. Pedroso,F.C. Infesta
+18,S.C. Dragões Sandinenses,C.D. Candal
+18,F.C. Avintes,A.R.D.C. Gondim Maia
+18,C.F. Oliveira Douro,Pedrouços Atl. C.
+18,Desp. Leça Balio,U.D. Beiriz
+18,"S.C. Salgueiros ""B"" - SAD",Atl. C. Bougadense
+19,Atl. C. Bougadense,"Varzim S.C. ""B"" - SDUQ"
+19,A.D. Grijó,Valadares Gaia F.C. - SAD
+19,S.C. Castêlo Maia,F.C. Pedroso
+19,F.C. Infesta,S.C. Dragões Sandinenses
+19,C.D. Candal,F.C. Avintes
+19,A.R.D.C. Gondim Maia,C.F. Oliveira Douro
+19,Pedrouços Atl. C.,Desp. Leça Balio
+19,U.D. Beiriz,"S.C. Salgueiros ""B"" - SAD"
+20,Valadares Gaia F.C. - SAD,"Varzim S.C. ""B"" - SDUQ"
+20,F.C. Pedroso,A.D. Grijó
+20,S.C. Dragões Sandinenses,S.C. Castêlo Maia
+20,F.C. Avintes,F.C. Infesta
+20,C.F. Oliveira Douro,C.D. Candal
+20,Desp. Leça Balio,A.R.D.C. Gondim Maia
+20,"S.C. Salgueiros ""B"" - SAD",Pedrouços Atl. C.
+20,U.D. Beiriz,Atl. C. Bougadense
+21,Atl. C. Bougadense,Valadares Gaia F.C. - SAD
+21,"Varzim S.C. ""B"" - SDUQ",F.C. Pedroso
+21,A.D. Grijó,S.C. Dragões Sandinenses
+21,S.C. Castêlo Maia,F.C. Avintes
+21,F.C. Infesta,C.F. Oliveira Douro
+21,C.D. Candal,Desp. Leça Balio
+21,A.R.D.C. Gondim Maia,"S.C. Salgueiros ""B"" - SAD"
+21,Pedrouços Atl. C.,U.D. Beiriz
+22,F.C. Pedroso,Valadares Gaia F.C. - SAD
+22,S.C. Dragões Sandinenses,"Varzim S.C. ""B"" - SDUQ"
+22,F.C. Avintes,A.D. Grijó
+22,C.F. Oliveira Douro,S.C. Castêlo Maia
+22,Desp. Leça Balio,F.C. Infesta
+22,"S.C. Salgueiros ""B"" - SAD",C.D. Candal
+22,U.D. Beiriz,A.R.D.C. Gondim Maia
+22,Pedrouços Atl. C.,Atl. C. Bougadense
+23,Atl. C. Bougadense,F.C. Pedroso
+23,Valadares Gaia F.C. - SAD,S.C. Dragões Sandinenses
+23,"Varzim S.C. ""B"" - SDUQ",F.C. Avintes
+23,A.D. Grijó,C.F. Oliveira Douro
+23,S.C. Castêlo Maia,Desp. Leça Balio
+23,F.C. Infesta,"S.C. Salgueiros ""B"" - SAD"
+23,C.D. Candal,U.D. Beiriz
+23,A.R.D.C. Gondim Maia,Pedrouços Atl. C.
+24,S.C. Dragões Sandinenses,F.C. Pedroso
+24,F.C. Avintes,Valadares Gaia F.C. - SAD
+24,C.F. Oliveira Douro,"Varzim S.C. ""B"" - SDUQ"
+24,Desp. Leça Balio,A.D. Grijó
+24,"S.C. Salgueiros ""B"" - SAD",S.C. Castêlo Maia
+24,U.D. Beiriz,F.C. Infesta
+24,Pedrouços Atl. C.,C.D. Candal
+24,A.R.D.C. Gondim Maia,Atl. C. Bougadense
+25,Atl. C. Bougadense,S.C. Dragões Sandinenses
+25,F.C. Pedroso,F.C. Avintes
+25,Valadares Gaia F.C. - SAD,C.F. Oliveira Douro
+25,"Varzim S.C. ""B"" - SDUQ",Desp. Leça Balio
+25,A.D. Grijó,"S.C. Salgueiros ""B"" - SAD"
+25,S.C. Castêlo Maia,U.D. Beiriz
+25,F.C. Infesta,Pedrouços Atl. C.
+25,C.D. Candal,A.R.D.C. Gondim Maia
+26,F.C. Avintes,S.C. Dragões Sandinenses
+26,C.F. Oliveira Douro,F.C. Pedroso
+26,Desp. Leça Balio,Valadares Gaia F.C. - SAD
+26,"S.C. Salgueiros ""B"" - SAD","Varzim S.C. ""B"" - SDUQ"
+26,U.D. Beiriz,A.D. Grijó
+26,Pedrouços Atl. C.,S.C. Castêlo Maia
+26,A.R.D.C. Gondim Maia,F.C. Infesta
+26,C.D. Candal,Atl. C. Bougadense
+27,Atl. C. Bougadense,F.C. Avintes
+27,S.C. Dragões Sandinenses,C.F. Oliveira Douro
+27,F.C. Pedroso,Desp. Leça Balio
+27,Valadares Gaia F.C. - SAD,"S.C. Salgueiros ""B"" - SAD"
+27,"Varzim S.C. ""B"" - SDUQ",U.D. Beiriz
+27,A.D. Grijó,Pedrouços Atl. C.
+27,S.C. Castêlo Maia,A.R.D.C. Gondim Maia
+27,F.C. Infesta,C.D. Candal
+28,C.F. Oliveira Douro,F.C. Avintes
+28,Desp. Leça Balio,S.C. Dragões Sandinenses
+28,"S.C. Salgueiros ""B"" - SAD",F.C. Pedroso
+28,U.D. Beiriz,Valadares Gaia F.C. - SAD
+28,Pedrouços Atl. C.,"Varzim S.C. ""B"" - SDUQ"
+28,A.R.D.C. Gondim Maia,A.D. Grijó
+28,C.D. Candal,S.C. Castêlo Maia
+28,F.C. Infesta,Atl. C. Bougadense
+29,C.F. Oliveira Douro,Atl. C. Bougadense
+29,F.C. Avintes,Desp. Leça Balio
+29,S.C. Dragões Sandinenses,"S.C. Salgueiros ""B"" - SAD"
+29,F.C. Pedroso,U.D. Beiriz
+29,Valadares Gaia F.C. - SAD,Pedrouços Atl. C.
+29,"Varzim S.C. ""B"" - SDUQ",A.R.D.C. Gondim Maia
+29,A.D. Grijó,C.D. Candal
+29,S.C. Castêlo Maia,F.C. Infesta
+30,Desp. Leça Balio,C.F. Oliveira Douro
+30,"S.C. Salgueiros ""B"" - SAD",F.C. Avintes
+30,U.D. Beiriz,S.C. Dragões Sandinenses
+30,Pedrouços Atl. C.,F.C. Pedroso
+30,A.R.D.C. Gondim Maia,Valadares Gaia F.C. - SAD
+30,C.D. Candal,"Varzim S.C. ""B"" - SDUQ"
+30,F.C. Infesta,A.D. Grijó
+30,Atl. C. Bougadense,S.C. Castêlo Maia
