@@ -137,12 +137,12 @@ aba = st.sidebar.radio(
     [
         "📊 Classificações",
         "📝 Inserir Palpites",
-        "⚙️ Painel Admin (Resultados)",
+        "⚙️ Painel Admin",
     ],
 )
 
 # ---------------------------------------------------------
-# ABA 1: CLASSIFICAÇÕES (GERAL, MENSAL, JORNADA)
+# ABA 1: CLASSIFICAÇÕES
 # ---------------------------------------------------------
 if aba == "📊 Classificações":
   st.header("📊 Tabelas de Classificação")
@@ -155,12 +155,8 @@ if aba == "📊 Classificações":
         ["🏆 Geral (Época)", "📅 Por Mês", "⚽ Por Jornada"]
     )
 
-    # -----------------------------------------------------
-    # SUB-ABA 1.1: CLASSIFICAÇÃO GERAL
-    # -----------------------------------------------------
     with sub_aba1:
       st.subheader("Classificação Geral Acumulada")
-
       pontos_totais = {j: 0 for j in jogadores}
       exatos_totais = {j: 0 for j in jogadores}
       tendencias_totais = {j: 0 for j in jogadores}
@@ -197,9 +193,6 @@ if aba == "📊 Classificações":
       df_geral.index += 1
       st.table(df_geral)
 
-    # -----------------------------------------------------
-    # SUB-ABA 1.2: CLASSIFICAÇÃO MENSAL
-    # -----------------------------------------------------
     with sub_aba2:
       st.subheader("Classificação por Mês")
       mes_sel = st.selectbox("Escolher o Mês:", LISTA_MESES)
@@ -239,9 +232,6 @@ if aba == "📊 Classificações":
       df_mes.index += 1
       st.table(df_mes)
 
-    # -----------------------------------------------------
-    # SUB-ABA 1.3: CLASSIFICAÇÃO POR JORNADA
-    # -----------------------------------------------------
     with sub_aba3:
       st.subheader("Pontuação Individual por Jornada")
       lista_j = [int(k) for k in dados["jornadas"].keys()]
@@ -281,7 +271,7 @@ if aba == "📊 Classificações":
       st.table(df_j)
 
 # ---------------------------------------------------------
-# ABA 2: INSERIR PALPITES
+# ABA 2: INSERIR PALPITES (COM SELEÇÃO/CRIAÇÃO DE JOGADOR)
 # ---------------------------------------------------------
 elif aba == "📝 Inserir Palpites":
   st.header("📝 Registar Prognósticos")
@@ -295,7 +285,23 @@ elif aba == "📝 Inserir Palpites":
         f" {j_ativa+1} só abrirá quando o Admin concluir a Jornada {j_ativa}."
     )
 
-  nome = st.text_input("Teu Nome / Alcunha:")
+  lista_existentes = list(dados["palpites"].keys())
+
+  # Seleção do tipo de identificação
+  if lista_existentes:
+    opcao_jogador = st.radio(
+        "Identificação do Apostador:",
+        ["Apostador Existente", "Novo Apostador"],
+        horizontal=True,
+    )
+  else:
+    opcao_jogador = "Novo Apostador"
+
+  nome = ""
+  if opcao_jogador == "Apostador Existente":
+    nome = st.selectbox("Seleciona o teu nome:", sorted(lista_existentes))
+  else:
+    nome = st.text_input("Escreve o teu Nome / Alcunha:").strip()
 
   if nome:
     jogos_jornada = dados["jornadas"].get(str(j_ativa), [])
@@ -303,7 +309,7 @@ elif aba == "📝 Inserir Palpites":
       st.warning("Não existem jogos registados para esta jornada.")
     else:
       with st.form("form_palpites"):
-        st.subheader(f"Jogos da Jornada {j_ativa}")
+        st.subheader(f"Palpites de {nome} para a Jornada {j_ativa}")
         novos_p = {}
 
         for jogo in jogos_jornada:
@@ -342,57 +348,87 @@ elif aba == "📝 Inserir Palpites":
           st.success(
               f"Prognósticos de {nome} guardados para a Jornada {j_ativa}!"
           )
+          st.rerun()
 
 # ---------------------------------------------------------
-# ABA 3: PAINEL ADMIN
+# ABA 3: PAINEL ADMIN (RESULTADOS E ELIMINAR JOGADORES)
 # ---------------------------------------------------------
-elif aba == "⚙️ Painel Admin (Resultados)":
-  st.header("⚙️ Inserir Resultados Oficiais")
+elif aba == "⚙️ Painel Admin":
+  st.header("⚙️ Painel de Administração")
 
-  lista_jornadas = [int(k) for k in dados["jornadas"].keys()]
-  j_sel = st.selectbox(
-      "Selecionar Jornada para Atualizar:", sorted(lista_jornadas)
+  sub_admin1, sub_admin2 = st.tabs(
+      ["⚽ Inserir Resultados", "🗑️ Gerir / Apagar Jogadores"]
   )
 
-  with st.form("form_admin"):
-    novos_res = []
-    for jogo in dados["jornadas"][str(j_sel)]:
-      id_j = jogo["id_jogo"]
-      val_c = 0 if jogo["res_casa"] is None else int(jogo["res_casa"])
-      val_f = 0 if jogo["res_fora"] is None else int(jogo["res_fora"])
-
-      col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
-      with col1:
-        st.write(f"**{jogo['casa']}**")
-      with col2:
-        rc = st.number_input(
-            "", min_value=0, max_value=15, value=val_c, key=f"r_c_{id_j}"
-        )
-      with col3:
-        rf = st.number_input(
-            "", min_value=0, max_value=15, value=val_f, key=f"r_f_{id_j}"
-        )
-      with col4:
-        st.write(f"**{jogo['fora']}**")
-
-      novos_res.append({"id_jogo": id_j, "c": rc, "f": rf})
-
-    marcar_fechado = st.checkbox(
-        "Marcar TODOS os jogos desta jornada como concluídos"
+  # Sub-aba 1: Inserir Resultados
+  with sub_admin1:
+    lista_jornadas = [int(k) for k in dados["jornadas"].keys()]
+    j_sel = st.selectbox(
+        "Selecionar Jornada para Atualizar:", sorted(lista_jornadas)
     )
 
-    if st.form_submit_button("Guardar Resultados"):
-      for nr in novos_res:
-        for jg in dados["jornadas"][str(j_sel)]:
-          if jg["id_jogo"] == nr["id_jogo"]:
-            if marcar_fechado:
-              jg["res_casa"] = nr["c"]
-              jg["res_fora"] = nr["f"]
-            else:
-              jg["res_casa"] = None
-              jg["res_fora"] = None
+    with st.form("form_admin"):
+      novos_res = []
+      for jogo in dados["jornadas"][str(j_sel)]:
+        id_j = jogo["id_jogo"]
+        val_c = 0 if jogo["res_casa"] is None else int(jogo["res_casa"])
+        val_f = 0 if jogo["res_fora"] is None else int(jogo["res_fora"])
 
-      guardar_dados(dados)
-      st.success(f"Resultados da Jornada {j_sel} atualizados!")
-      if marcar_fechado:
-        st.info(f"🔓 A Jornada {j_sel + 1} fica agora disponível para palpites!")
+        col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
+        with col1:
+          st.write(f"**{jogo['casa']}**")
+        with col2:
+          rc = st.number_input(
+              "", min_value=0, max_value=15, value=val_c, key=f"r_c_{id_j}"
+          )
+        with col3:
+          rf = st.number_input(
+              "", min_value=0, max_value=15, value=val_f, key=f"r_f_{id_j}"
+          )
+        with col4:
+          st.write(f"**{jogo['fora']}**")
+
+        novos_res.append({"id_jogo": id_j, "c": rc, "f": rf})
+
+      marcar_fechado = st.checkbox(
+          "Marcar TODOS os jogos desta jornada como concluídos"
+      )
+
+      if st.form_submit_button("Guardar Resultados"):
+        for nr in novos_res:
+          for jg in dados["jornadas"][str(j_sel)]:
+            if jg["id_jogo"] == nr["id_jogo"]:
+              if marcar_fechado:
+                jg["res_casa"] = nr["c"]
+                jg["res_fora"] = nr["f"]
+              else:
+                jg["res_casa"] = None
+                jg["res_fora"] = None
+
+        guardar_dados(dados)
+        st.success(f"Resultados da Jornada {j_sel} atualizados!")
+        if marcar_fechado:
+          st.info(
+              f"🔓 A Jornada {j_sel + 1} fica agora disponível para palpites!"
+          )
+
+  # Sub-aba 2: Gerir / Apagar Jogadores
+  with sub_admin2:
+    st.subheader("Eliminar Participante")
+    lista_jogadores = list(dados["palpites"].keys())
+
+    if not lista_jogadores:
+      st.info("Não existem jogadores registados.")
+    else:
+      jog_para_remover = st.selectbox(
+          "Seleciona o jogador a eliminar:", sorted(lista_jogadores)
+      )
+
+      if st.button("❌ Eliminar Jogador"):
+        if jog_para_remover in dados["palpites"]:
+          del dados["palpites"][jog_para_remover]
+          guardar_dados(dados)
+          st.success(
+              f"O participante '{jog_para_remover}' foi removido com sucesso!"
+          )
+          st.rerun()
