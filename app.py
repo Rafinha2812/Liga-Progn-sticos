@@ -7,12 +7,11 @@ st.set_page_config(
     page_title="Liga de Prognósticos - AF Porto Elite S2", layout="wide"
 )
 
-# Conexão com o Supabase através dos Secrets do Streamlit
+# Conexão com o Supabase
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Nomes possíveis para o ficheiro do calendário no GitHub
 OPCOES_CALENDARIO = [
     "calendario.csv",
     "Calendario.csv",
@@ -28,34 +27,34 @@ def obter_ficheiro_calendario():
   return None
 
 
-# Ler o ficheiro CSV e povoar a BD caso esteja vazia
-def inicializar_calendario_bd():
+# Função para povoar a base de dados
+def popular_base_dados():
+  ficheiro = obter_ficheiro_calendario()
+  if not ficheiro:
+    return False
+
   try:
-    res = supabase.table("jornadas").select("id_jogo").limit(1).execute()
-    if not res.data:
-      ficheiro = obter_ficheiro_calendario()
-      if ficheiro:
-        df_cal = pd.read_csv(ficheiro)
-        dados_para_inserir = []
-        for idx, row in df_cal.iterrows():
-          j_num = int(row["jornada"])
-          dados_para_inserir.append({
-              "id_jogo": f"J{j_num}_G{idx+1}",
-              "jornada": j_num,
-              "casa": str(row["casa"]).strip(),
-              "fora": str(row["fora"]).strip(),
-              "res_casa": None,
-              "res_fora": None,
-          })
-        supabase.table("jornadas").insert(dados_para_inserir).execute()
+    df_cal = pd.read_csv(ficheiro)
+    dados_para_inserir = []
+    for idx, row in df_cal.iterrows():
+      j_num = int(row["jornada"])
+      dados_para_inserir.append({
+          "id_jogo": f"J{j_num}_G{idx+1}",
+          "jornada": j_num,
+          "casa": str(row["casa"]).strip(),
+          "fora": str(row["fora"]).strip(),
+          "res_casa": None,
+          "res_fora": None,
+      })
+    # Insere todos os jogos
+    supabase.table("jornadas").insert(dados_para_inserir).execute()
+    return True
   except Exception as e:
-    st.error(f"Erro ao carregar calendário: {e}")
+    st.error(f"Erro ao inserir jogos: {e}")
+    return False
 
 
-inicializar_calendario_bd()
-
-
-# Leitura de Jornadas e Palpites a partir do Supabase
+# Carregar dados
 def carregar_jornadas_bd():
   jornadas = {}
   try:
@@ -65,6 +64,17 @@ def carregar_jornadas_bd():
         .order("jornada", desc=False)
         .execute()
     )
+
+    # Se a BD estiver vazia, carrega o CSV imediatamente
+    if not res.data:
+      if popular_base_dados():
+        res = (
+            supabase.table("jornadas")
+            .select("*")
+            .order("jornada", desc=False)
+            .execute()
+        )
+
     if res.data:
       for item in res.data:
         if isinstance(item, dict) and item.get("jornada") is not None:
@@ -73,7 +83,7 @@ def carregar_jornadas_bd():
             jornadas[j_str] = []
           jornadas[j_str].append(item)
   except Exception as e:
-    st.error(f"Erro BD Jornadas: {e}")
+    st.error(f"Erro ao carregar jornadas: {e}")
   return jornadas
 
 
@@ -94,7 +104,7 @@ def carregar_palpites_bd():
                 "f": item.get("p_fora", 0),
             }
   except Exception as e:
-    st.error(f"Erro BD Palpites: {e}")
+    pass
   return palpites
 
 
@@ -167,7 +177,7 @@ LISTA_MESES = [
     "Maio 2027",
 ]
 
-# Interface Principal
+# Interface
 st.title("🏆 Liga de Prognósticos — AF Porto (Elite Série 2)")
 
 aba = st.sidebar.radio(
@@ -175,9 +185,6 @@ aba = st.sidebar.radio(
     ["📊 Classificações", "📝 Inserir Palpites", "⚙️ Painel Admin"],
 )
 
-# ---------------------------------------------------------
-# ABA 1: CLASSIFICAÇÕES
-# ---------------------------------------------------------
 if aba == "📊 Classificações":
   st.header("📊 Tabelas de Classificação")
   jogadores = list(palpites_dados.keys())
@@ -196,7 +203,6 @@ if aba == "📊 Classificações":
           {j: 0 for j in jogadores},
           {j: 0 for j in jogadores},
       )
-
       for j_num in jornadas_dados.keys():
         for jogo in jornadas_dados[j_num]:
           id_j, rc, rf = (
@@ -213,7 +219,6 @@ if aba == "📊 Classificações":
                 ex_t[jog] += 1
               elif pts == 1:
                 tend_t[jog] += 1
-
       df_g = (
           pd.DataFrame({
               "Participante": jogadores,
@@ -235,7 +240,6 @@ if aba == "📊 Classificações":
           {j: 0 for j in jogadores},
           {j: 0 for j in jogadores},
       )
-
       for j_num in jornadas_dados.keys():
         if obter_mes_por_jornada(j_num) == mes_sel:
           for jogo in jornadas_dados[j_num]:
@@ -253,7 +257,6 @@ if aba == "📊 Classificações":
                   ex_m[jog] += 1
                 elif pts == 1:
                   tend_m[jog] += 1
-
       df_m = (
           pd.DataFrame({
               "Participante": jogadores,
@@ -278,7 +281,6 @@ if aba == "📊 Classificações":
           {j: 0 for j in jogadores},
           {j: 0 for j in jogadores},
       )
-
       for jogo in jornadas_dados.get(str(j_sel_tab), []):
         id_j, rc, rf = (
             jogo.get("id_jogo"),
@@ -294,7 +296,6 @@ if aba == "📊 Classificações":
               ex_j[jog] += 1
             elif pts == 1:
               tend_j[jog] += 1
-
       df_j = (
           pd.DataFrame({
               "Participante": jogadores,
@@ -308,9 +309,6 @@ if aba == "📊 Classificações":
       df_j.index += 1
       st.table(df_j)
 
-# ---------------------------------------------------------
-# ABA 2: INSERIR PALPITES
-# ---------------------------------------------------------
 elif aba == "📝 Inserir Palpites":
   st.header("📝 Registar Prognósticos")
   j_ativa = obter_jornada_ativa()
@@ -336,8 +334,8 @@ elif aba == "📝 Inserir Palpites":
     jogos_j = jornadas_dados.get(str(j_ativa), [])
     if not jogos_j:
       st.warning(
-          "O calendário está a ser carregado. Por favor recarrega a página em"
-          " alguns segundos."
+          "Os jogos estão a ser sincronizados. Recarrega a página dentro de"
+          " segundos."
       )
     else:
       with st.form("form_palpites"):
@@ -381,14 +379,9 @@ elif aba == "📝 Inserir Palpites":
           supabase.table("palpites").upsert(
               registos, on_conflict="jogador,id_jogo"
           ).execute()
-          st.success(
-              f"Prognósticos de {nome} guardados na base de dados com sucesso!"
-          )
+          st.success(f"Prognósticos de {nome} guardados com sucesso!")
           st.rerun()
 
-# ---------------------------------------------------------
-# ABA 3: PAINEL ADMIN
-# ---------------------------------------------------------
 elif aba == "⚙️ Painel Admin":
   st.header("⚙️ Painel de Administração")
   sub1, sub2 = st.tabs(["⚽ Inserir Resultados", "🗑️ Gerir / Apagar Jogadores"])
