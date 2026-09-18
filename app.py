@@ -551,7 +551,7 @@ if aba == "📊 Classificações":
       st.table(df_j)
 
 # ---------------------------------------------------------
-# ABA 2: INSERIR PALPITES (COM SELEÇÃO INTELIGENTE)
+# ABA 2: INSERIR PALPITES (OPÇÃO SEMPRE VISÍVEL)
 # ---------------------------------------------------------
 elif aba == "📝 Inserir Palpites":
   st.header("📝 Registar Prognósticos")
@@ -560,18 +560,22 @@ elif aba == "📝 Inserir Palpites":
 
   lista_existentes = list(palpites_dados.keys())
 
-  if lista_existentes:
-    opcao_jog = st.radio(
-        "Identificação do Apostador:",
-        ["Apostador Existente", "Novo Apostador"],
-        horizontal=True,
-    )
-  else:
-    opcao_jog = "Novo Apostador"
+  # O radio button aparece SEMPRE
+  opcao_jog = st.radio(
+      "Identificação do Apostador:",
+      ["Apostador Existente", "Novo Apostador"],
+      horizontal=True,
+  )
 
   nome = ""
   if opcao_jog == "Apostador Existente":
-    nome = st.selectbox("Seleciona o teu nome:", sorted(lista_existentes))
+    if lista_existentes:
+      nome = st.selectbox("Seleciona o teu nome:", sorted(lista_existentes))
+    else:
+      st.warning(
+          "Ainda não existem apostadores registados. Seleciona 'Novo"
+          " Apostador' para criar o primeiro."
+      )
   else:
     nome = st.text_input("Escreve o teu Nome / Alcunha:").strip()
 
