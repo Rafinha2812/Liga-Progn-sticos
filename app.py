@@ -23,10 +23,12 @@ def carregar_jornadas_bd():
     )
     if res.data:
       for item in res.data:
-        j_str = str(item["jornada"])
-        if j_str not in jornadas:
-          jornadas[j_str] = []
-        jornadas[j_str].append(item)
+        # Garante que 'item' é um dicionário válido
+        if isinstance(item, dict) and item.get("jornada") is not None:
+          j_str = str(item["jornada"])
+          if j_str not in jornadas:
+            jornadas[j_str] = []
+          jornadas[j_str].append(item)
   except Exception as e:
     st.error(f"Erro ao ligar à base de dados: {e}")
   return jornadas
@@ -38,15 +40,16 @@ def carregar_palpites_bd():
     res = supabase.table("palpites").select("*").execute()
     if res.data:
       for item in res.data:
-        jog = item.get("jogador")
-        id_j = item.get("id_jogo")
-        if jog and id_j:
-          if jog not in palpites:
-            palpites[jog] = {}
-          palpites[jog][id_j] = {
-              "c": item.get("p_casa", 0),
-              "f": item.get("p_fora", 0),
-          }
+        if isinstance(item, dict):
+          jog = item.get("jogador")
+          id_j = item.get("id_jogo")
+          if jog and id_j:
+            if jog not in palpites:
+              palpites[jog] = {}
+            palpites[jog][id_j] = {
+                "c": item.get("p_casa", 0),
+                "f": item.get("p_fora", 0),
+            }
   except Exception as e:
     pass
   return palpites
@@ -75,6 +78,7 @@ def jornada_concluida(num_jornada):
   return all(
       j.get("res_casa") is not None and j.get("res_fora") is not None
       for j in jogos
+      if isinstance(j, dict)
   )
 
 
@@ -151,20 +155,21 @@ if aba == "📊 Classificações":
       )
       for j_num in jornadas_dados.keys():
         for jogo in jornadas_dados[j_num]:
-          id_j, rc, rf = (
-              jogo.get("id_jogo"),
-              jogo.get("res_casa"),
-              jogo.get("res_fora"),
-          )
-          for jog in jogadores:
-            palp = palpites_dados[jog].get(id_j)
-            if palp and rc is not None and rf is not None:
-              pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
-              pts_t[jog] += pts
-              if pts == 2:
-                ex_t[jog] += 1
-              elif pts == 1:
-                tend_t[jog] += 1
+          if isinstance(jogo, dict):
+            id_j, rc, rf = (
+                jogo.get("id_jogo"),
+                jogo.get("res_casa"),
+                jogo.get("res_fora"),
+            )
+            for jog in jogadores:
+              palp = palpites_dados[jog].get(id_j)
+              if palp and rc is not None and rf is not None:
+                pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
+                pts_t[jog] += pts
+                if pts == 2:
+                  ex_t[jog] += 1
+                elif pts == 1:
+                  tend_t[jog] += 1
       df_g = (
           pd.DataFrame({
               "Participante": jogadores,
@@ -189,20 +194,21 @@ if aba == "📊 Classificações":
       for j_num in jornadas_dados.keys():
         if obter_mes_por_jornada(j_num) == mes_sel:
           for jogo in jornadas_dados[j_num]:
-            id_j, rc, rf = (
-                jogo.get("id_jogo"),
-                jogo.get("res_casa"),
-                jogo.get("res_fora"),
-            )
-            for jog in jogadores:
-              palp = palpites_dados[jog].get(id_j)
-              if palp and rc is not None and rf is not None:
-                pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
-                pts_m[jog] += pts
-                if pts == 2:
-                  ex_m[jog] += 1
-                elif pts == 1:
-                  tend_m[jog] += 1
+            if isinstance(jogo, dict):
+              id_j, rc, rf = (
+                  jogo.get("id_jogo"),
+                  jogo.get("res_casa"),
+                  jogo.get("res_fora"),
+              )
+              for jog in jogadores:
+                palp = palpites_dados[jog].get(id_j)
+                if palp and rc is not None and rf is not None:
+                  pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
+                  pts_m[jog] += pts
+                  if pts == 2:
+                    ex_m[jog] += 1
+                  elif pts == 1:
+                    tend_m[jog] += 1
       df_m = (
           pd.DataFrame({
               "Participante": jogadores,
@@ -228,20 +234,21 @@ if aba == "📊 Classificações":
           {j: 0 for j in jogadores},
       )
       for jogo in jornadas_dados.get(str(j_sel_tab), []):
-        id_j, rc, rf = (
-            jogo.get("id_jogo"),
-            jogo.get("res_casa"),
-            jogo.get("res_fora"),
-        )
-        for jog in jogadores:
-          palp = palpites_dados[jog].get(id_j)
-          if palp and rc is not None and rf is not None:
-            pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
-            pts_j[jog] += pts
-            if pts == 2:
-              ex_j[jog] += 1
-            elif pts == 1:
-              tend_j[jog] += 1
+        if isinstance(jogo, dict):
+          id_j, rc, rf = (
+              jogo.get("id_jogo"),
+              jogo.get("res_casa"),
+              jogo.get("res_fora"),
+          )
+          for jog in jogadores:
+            palp = palpites_dados[jog].get(id_j)
+            if palp and rc is not None and rf is not None:
+              pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
+              pts_j[jog] += pts
+              if pts == 2:
+                ex_j[jog] += 1
+              elif pts == 1:
+                tend_j[jog] += 1
       df_j = (
           pd.DataFrame({
               "Participante": jogadores,
@@ -291,30 +298,31 @@ elif aba == "📝 Inserir Palpites":
         st.subheader(f"Palpites de {nome} para a Jornada {j_ativa}")
         novos_p = {}
         for jogo in jogos_j:
-          id_j = jogo.get("id_jogo")
-          p_ant = palpites_dados.get(nome, {}).get(id_j, {"c": 0, "f": 0})
-          col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
-          with col1:
-            st.write(f"**{jogo.get('casa')}**")
-          with col2:
-            pc = st.number_input(
-                "",
-                min_value=0,
-                max_value=15,
-                value=p_ant["c"],
-                key=f"p_c_{id_j}",
-            )
-          with col3:
-            pf = st.number_input(
-                "",
-                min_value=0,
-                max_value=15,
-                value=p_ant["f"],
-                key=f"p_f_{id_j}",
-            )
-          with col4:
-            st.write(f"**{jogo.get('fora')}**")
-          novos_p[id_j] = {"c": pc, "f": pf}
+          if isinstance(jogo, dict):
+            id_j = jogo.get("id_jogo")
+            p_ant = palpites_dados.get(nome, {}).get(id_j, {"c": 0, "f": 0})
+            col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
+            with col1:
+              st.write(f"**{jogo.get('casa')}**")
+            with col2:
+              pc = st.number_input(
+                  "",
+                  min_value=0,
+                  max_value=15,
+                  value=p_ant["c"],
+                  key=f"p_c_{id_j}",
+              )
+            with col3:
+              pf = st.number_input(
+                  "",
+                  min_value=0,
+                  max_value=15,
+                  value=p_ant["f"],
+                  key=f"p_f_{id_j}",
+              )
+            with col4:
+              st.write(f"**{jogo.get('fora')}**")
+            novos_p[id_j] = {"c": pc, "f": pf}
 
         if st.form_submit_button("Guardar Prognósticos"):
           registos = []
@@ -345,23 +353,24 @@ elif aba == "⚙️ Painel Admin":
     with st.form("form_admin"):
       novos_res = []
       for jogo in jornadas_dados.get(str(j_sel), []):
-        id_j = jogo.get("id_jogo")
-        val_c = 0 if jogo.get("res_casa") is None else int(jogo["res_casa"])
-        val_f = 0 if jogo.get("res_fora") is None else int(jogo["res_fora"])
-        col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
-        with col1:
-          st.write(f"**{jogo.get('casa')}**")
-        with col2:
-          rc = st.number_input(
-              "", min_value=0, max_value=15, value=val_c, key=f"r_c_{id_j}"
-          )
-        with col3:
-          rf = st.number_input(
-              "", min_value=0, max_value=15, value=val_f, key=f"r_f_{id_j}"
-          )
-        with col4:
-          st.write(f"**{jogo.get('fora')}**")
-        novos_res.append({"id_jogo": id_j, "c": rc, "f": rf})
+        if isinstance(jogo, dict):
+          id_j = jogo.get("id_jogo")
+          val_c = 0 if jogo.get("res_casa") is None else int(jogo["res_casa"])
+          val_f = 0 if jogo.get("res_fora") is None else int(jogo["res_fora"])
+          col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
+          with col1:
+            st.write(f"**{jogo.get('casa')}**")
+          with col2:
+            rc = st.number_input(
+                "", min_value=0, max_value=15, value=val_c, key=f"r_c_{id_j}"
+            )
+          with col3:
+            rf = st.number_input(
+                "", min_value=0, max_value=15, value=val_f, key=f"r_f_{id_j}"
+            )
+          with col4:
+            st.write(f"**{jogo.get('fora')}**")
+          novos_res.append({"id_jogo": id_j, "c": rc, "f": rf})
 
       marcar_fechado = st.checkbox(
           "Marcar TODOS os jogos desta jornada como concluídos"
