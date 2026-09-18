@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import streamlit as st
 from supabase import create_client
@@ -6,10 +7,51 @@ st.set_page_config(
     page_title="Liga de Prognósticos - AF Porto Elite S2", layout="wide"
 )
 
-# Conexão ao Supabase através dos Secrets do Streamlit
+# Conexão ao Supabase
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+OPCOES_CALENDARIO = [
+    "Calendário.csv",
+    "calendario.csv",
+    "Calendario.csv",
+    "calendário.csv",
+]
+
+
+def obter_ficheiro_calendario():
+  for f in OPCOES_CALENDARIO:
+    if os.path.exists(f):
+      return f
+  return None
+
+
+# Forçar a inserção automática do calendário se a base de dados estiver vazia
+def sincronizar_calendario():
+  try:
+    res = supabase.table("jornadas").select("id_jogo").limit(1).execute()
+    if not res.data:
+      ficheiro = obter_ficheiro_calendario()
+      if ficheiro:
+        df_cal = pd.read_csv(ficheiro)
+        dados_para_inserir = []
+        for idx, row in df_cal.iterrows():
+          j_num = int(row["jornada"])
+          dados_para_inserir.append({
+              "id_jogo": f"J{j_num}_G{idx+1}",
+              "jornada": j_num,
+              "casa": str(row["casa"]).strip(),
+              "fora": str(row["fora"]).strip(),
+              "res_casa": None,
+              "res_fora": None,
+          })
+        supabase.table("jornadas").insert(dados_para_inserir).execute()
+  except Exception as e:
+    st.error(f"Erro ao carregar calendário para a BD: {e}")
+
+
+sincronizar_calendario()
 
 
 def carregar_jornadas_bd():
@@ -23,7 +65,6 @@ def carregar_jornadas_bd():
     )
     if res.data:
       for item in res.data:
-        # Garante que 'item' é um dicionário válido
         if isinstance(item, dict) and item.get("jornada") is not None:
           j_str = str(item["jornada"])
           if j_str not in jornadas:
@@ -289,9 +330,8 @@ elif aba == "📝 Inserir Palpites":
   if nome:
     jogos_j = jornadas_dados.get(str(j_ativa), [])
     if not jogos_j:
-      st.error(
-          "Ainda não existem jogos inseridos na base de dados para a Jornada"
-          f" {j_ativa}."
+      st.warning(
+          "A carregar jogos do calendário... Por favor recarrega a página."
       )
     else:
       with st.form("form_palpites"):
