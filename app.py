@@ -551,7 +551,7 @@ if aba == "📊 Classificações":
       st.table(df_j)
 
 # ---------------------------------------------------------
-# ABA 2: INSERIR PALPITES
+# ABA 2: INSERIR PALPITES (COM SELEÇÃO INTELIGENTE)
 # ---------------------------------------------------------
 elif aba == "📝 Inserir Palpites":
   st.header("📝 Registar Prognósticos")
@@ -559,16 +559,17 @@ elif aba == "📝 Inserir Palpites":
   st.info(f"🔒 **Jornada Aberta para Palpites:** Jornada {j_ativa}")
 
   lista_existentes = list(palpites_dados.keys())
-  opcao_jog = (
-      st.radio(
-          "Identificação do Apostador:",
-          ["Apostador Existente", "Novo Apostador"],
-          horizontal=True,
-      )
-      if lista_existentes
-      else "Novo Apostador"
-  )
 
+  if lista_existentes:
+    opcao_jog = st.radio(
+        "Identificação do Apostador:",
+        ["Apostador Existente", "Novo Apostador"],
+        horizontal=True,
+    )
+  else:
+    opcao_jog = "Novo Apostador"
+
+  nome = ""
   if opcao_jog == "Apostador Existente":
     nome = st.selectbox("Seleciona o teu nome:", sorted(lista_existentes))
   else:
