@@ -24,64 +24,71 @@ def obter_ficheiro_calendario():
 
 # Carregar/Inicializar Calendário na Base de Dados se estiver vazia
 def inicializar_calendario_bd():
-  res = supabase.table("jornadas").select("id_jogo").execute()
-  if not res.data:
-    ficheiro = obter_ficheiro_calendario()
-    if ficheiro:
-      df_cal = pd.read_csv(ficheiro)
-      dados_para_inserir = []
-      for idx, row in df_cal.iterrows():
-        j_num = row["jornada"]
-        dados_para_inserir.append({
-            "id_jogo": f"J{j_num}_G{idx+1}",
-            "jornada": int(j_num),
-            "casa": str(row["casa"]).strip(),
-            "fora": str(row["fora"]).strip(),
-            "res_casa": None,
-            "res_fora": None,
-        })
-      supabase.table("jornadas").insert(dados_para_inserir).execute()
+  try:
+    res = supabase.table("jornadas").select("id_jogo").execute()
+    if not res.data:
+      ficheiro = obter_ficheiro_calendario()
+      if ficheiro:
+        df_cal = pd.read_csv(ficheiro)
+        dados_para_inserir = []
+        for idx, row in df_cal.iterrows():
+          j_num = row["jornada"]
+          dados_para_inserir.append({
+              "id_jogo": f"J{j_num}_G{idx+1}",
+              "jornada": int(j_num),
+              "casa": str(row["casa"]).strip(),
+              "fora": str(row["fora"]).strip(),
+              "res_casa": None,
+              "res_fora": None,
+          })
+        supabase.table("jornadas").insert(dados_para_inserir).execute()
+  except Exception as e:
+    st.error(f"Erro a carregar calendário inicial: {e}")
 
 
-# Forçar a inicialização do calendário
-try:
-  inicializar_calendario_bd()
-except Exception as e:
-  st.warning(f"Nota na inicialização do calendário: {e}")
+inicializar_calendario_bd()
 
 
 # Funções de Leitura e Escrita na BD
 def carregar_jornadas_bd():
-  res = (
-      supabase.table("jornadas")
-      .select("*")
-      .order("jornada", desc=False)
-      .execute()
-  )
   jornadas = {}
-  if res.data:
-    for item in res.data:
-      if item and "jornada" in item and item["jornada"] is not None:
-        j_str = str(item["jornada"])
-        if j_str not in jornadas:
-          jornadas[j_str] = []
-        jornadas[j_str].append(item)
+  try:
+    res = (
+        supabase.table("jornadas")
+        .select("*")
+        .order("jornada", desc=False)
+        .execute()
+    )
+    if res.data:
+      for item in res.data:
+        if isinstance(item, dict) and item.get("jornada") is not None:
+          j_str = str(item["jornada"])
+          if j_str not in jornadas:
+            jornadas[j_str] = []
+          jornadas[j_str].append(item)
+  except Exception as e:
+    st.error(f"Erro ao carregar jornadas da base de dados: {e}")
   return jornadas
 
 
 def carregar_palpites_bd():
-  res = supabase.table("palpites").select("*").execute()
   palpites = {}
-  if res.data:
-    for item in res.data:
-      jog = item.get("jogador")
-      if jog:
-        if jog not in palpites:
-          palpites[jog] = {}
-        palpites[jog][item["id_jogo"]] = {
-            "c": item.get("p_casa", 0),
-            "f": item.get("p_fora", 0),
-        }
+  try:
+    res = supabase.table("palpites").select("*").execute()
+    if res.data:
+      for item in res.data:
+        if isinstance(item, dict):
+          jog = item.get("jogador")
+          id_j = item.get("id_jogo")
+          if jog and id_j:
+            if jog not in palpites:
+              palpites[jog] = {}
+            palpites[jog][id_j] = {
+                "c": item.get("p_casa", 0),
+                "f": item.get("p_fora", 0),
+            }
+  except Exception as e:
+    st.error(f"Erro ao carregar palpites da base de dados: {e}")
   return palpites
 
 
@@ -186,7 +193,11 @@ if aba == "📊 Classificações":
 
       for j_num in jornadas_dados.keys():
         for jogo in jornadas_dados[j_num]:
-          id_j, rc, rf = jogo["id_jogo"], jogo["res_casa"], jogo["res_fora"]
+          id_j, rc, rf = (
+              jogo.get("id_jogo"),
+              jogo.get("res_casa"),
+              jogo.get("res_fora"),
+          )
           for jog in jogadores:
             palp = palpites_dados[jog].get(id_j)
             if palp and rc is not None and rf is not None:
@@ -222,7 +233,11 @@ if aba == "📊 Classificações":
       for j_num in jornadas_dados.keys():
         if obter_mes_por_jornada(j_num) == mes_sel:
           for jogo in jornadas_dados[j_num]:
-            id_j, rc, rf = jogo["id_jogo"], jogo["res_casa"], jogo["res_fora"]
+            id_j, rc, rf = (
+                jogo.get("id_jogo"),
+                jogo.get("res_casa"),
+                jogo.get("res_fora"),
+            )
             for jog in jogadores:
               palp = palpites_dados[jog].get(id_j)
               if palp and rc is not None and rf is not None:
@@ -248,7 +263,9 @@ if aba == "📊 Classificações":
 
     with sub_aba3:
       st.subheader("Pontuação Individual por Jornada")
-      lista_j = [int(k) for k in jornadas_dados.keys()] if jornadas_dados else [1]
+      lista_j = (
+          [int(k) for k in jornadas_dados.keys()] if jornadas_dados else [1]
+      )
       j_sel_tab = st.selectbox("Escolher Jornada:", sorted(lista_j))
       pts_j, ex_j, tend_j = (
           {j: 0 for j in jogadores},
@@ -257,7 +274,11 @@ if aba == "📊 Classificações":
       )
 
       for jogo in jornadas_dados.get(str(j_sel_tab), []):
-        id_j, rc, rf = jogo["id_jogo"], jogo["res_casa"], jogo["res_fora"]
+        id_j, rc, rf = (
+            jogo.get("id_jogo"),
+            jogo.get("res_casa"),
+            jogo.get("res_fora"),
+        )
         for jog in jogadores:
           palp = palpites_dados[jog].get(id_j)
           if palp and rc is not None and rf is not None:
@@ -308,17 +329,20 @@ elif aba == "📝 Inserir Palpites":
   if nome:
     jogos_j = jornadas_dados.get(str(j_ativa), [])
     if not jogos_j:
-      st.warning("O calendário ainda está a ser carregado para a base de dados. Recarrega a página em alguns segundos.")
+      st.warning(
+          "O calendário ainda está a ser inicializado. Recarrega a página dentro"
+          " de alguns segundos."
+      )
     else:
       with st.form("form_palpites"):
         st.subheader(f"Palpites de {nome} para a Jornada {j_ativa}")
         novos_p = {}
         for jogo in jogos_j:
-          id_j = jogo["id_jogo"]
+          id_j = jogo.get("id_jogo")
           p_ant = palpites_dados.get(nome, {}).get(id_j, {"c": 0, "f": 0})
           col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
           with col1:
-            st.write(f"**{jogo['casa']}**")
+            st.write(f"**{jogo.get('casa')}**")
           with col2:
             pc = st.number_input(
                 "",
@@ -336,7 +360,7 @@ elif aba == "📝 Inserir Palpites":
                 key=f"p_f_{id_j}",
             )
           with col4:
-            st.write(f"**{jogo['fora']}**")
+            st.write(f"**{jogo.get('fora')}**")
           novos_p[id_j] = {"c": pc, "f": pf}
 
         if st.form_submit_button("Guardar Prognósticos"):
@@ -370,12 +394,12 @@ elif aba == "⚙️ Painel Admin":
     with st.form("form_admin"):
       novos_res = []
       for jogo in jornadas_dados.get(str(j_sel), []):
-        id_j = jogo["id_jogo"]
+        id_j = jogo.get("id_jogo")
         val_c = 0 if jogo.get("res_casa") is None else int(jogo["res_casa"])
         val_f = 0 if jogo.get("res_fora") is None else int(jogo["res_fora"])
         col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
         with col1:
-          st.write(f"**{jogo['casa']}**")
+          st.write(f"**{jogo.get('casa')}**")
         with col2:
           rc = st.number_input(
               "", min_value=0, max_value=15, value=val_c, key=f"r_c_{id_j}"
@@ -385,7 +409,7 @@ elif aba == "⚙️ Painel Admin":
               "", min_value=0, max_value=15, value=val_f, key=f"r_f_{id_j}"
           )
         with col4:
-          st.write(f"**{jogo['fora']}**")
+          st.write(f"**{jogo.get('fora')}**")
         novos_res.append({"id_jogo": id_j, "c": rc, "f": rf})
 
       marcar_fechado = st.checkbox(
@@ -408,7 +432,9 @@ elif aba == "⚙️ Painel Admin":
     if not lista_jogs:
       st.info("Não existem jogadores registados.")
     else:
-      jog_del = st.selectbox("Seleciona o jogador a eliminar:", sorted(lista_jogs))
+      jog_del = st.selectbox(
+          "Seleciona o jogador a eliminar:", sorted(lista_jogs)
+      )
       if st.button("❌ Eliminar Jogador"):
         supabase.table("palpites").delete().eq("jogador", jog_del).execute()
         st.success(f"O participante '{jog_del}' foi eliminado!")
