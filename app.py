@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import streamlit as st
 from supabase import create_client
@@ -7,54 +6,12 @@ st.set_page_config(
     page_title="Liga de Prognósticos - AF Porto Elite S2", layout="wide"
 )
 
-# Conexão com o Supabase
+# Conexão ao Supabase através dos Secrets do Streamlit
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-OPCOES_CALENDARIO = [
-    "calendario.csv",
-    "Calendario.csv",
-    "Calendário.csv",
-    "calendário.csv",
-]
 
-
-def obter_ficheiro_calendario():
-  for f in OPCOES_CALENDARIO:
-    if os.path.exists(f):
-      return f
-  return None
-
-
-# Função para povoar a base de dados
-def popular_base_dados():
-  ficheiro = obter_ficheiro_calendario()
-  if not ficheiro:
-    return False
-
-  try:
-    df_cal = pd.read_csv(ficheiro)
-    dados_para_inserir = []
-    for idx, row in df_cal.iterrows():
-      j_num = int(row["jornada"])
-      dados_para_inserir.append({
-          "id_jogo": f"J{j_num}_G{idx+1}",
-          "jornada": j_num,
-          "casa": str(row["casa"]).strip(),
-          "fora": str(row["fora"]).strip(),
-          "res_casa": None,
-          "res_fora": None,
-      })
-    # Insere todos os jogos
-    supabase.table("jornadas").insert(dados_para_inserir).execute()
-    return True
-  except Exception as e:
-    st.error(f"Erro ao inserir jogos: {e}")
-    return False
-
-
-# Carregar dados
 def carregar_jornadas_bd():
   jornadas = {}
   try:
@@ -64,26 +21,14 @@ def carregar_jornadas_bd():
         .order("jornada", desc=False)
         .execute()
     )
-
-    # Se a BD estiver vazia, carrega o CSV imediatamente
-    if not res.data:
-      if popular_base_dados():
-        res = (
-            supabase.table("jornadas")
-            .select("*")
-            .order("jornada", desc=False)
-            .execute()
-        )
-
     if res.data:
       for item in res.data:
-        if isinstance(item, dict) and item.get("jornada") is not None:
-          j_str = str(item["jornada"])
-          if j_str not in jornadas:
-            jornadas[j_str] = []
-          jornadas[j_str].append(item)
+        j_str = str(item["jornada"])
+        if j_str not in jornadas:
+          jornadas[j_str] = []
+        jornadas[j_str].append(item)
   except Exception as e:
-    st.error(f"Erro ao carregar jornadas: {e}")
+    st.error(f"Erro ao ligar à base de dados: {e}")
   return jornadas
 
 
@@ -93,16 +38,15 @@ def carregar_palpites_bd():
     res = supabase.table("palpites").select("*").execute()
     if res.data:
       for item in res.data:
-        if isinstance(item, dict):
-          jog = item.get("jogador")
-          id_j = item.get("id_jogo")
-          if jog and id_j:
-            if jog not in palpites:
-              palpites[jog] = {}
-            palpites[jog][id_j] = {
-                "c": item.get("p_casa", 0),
-                "f": item.get("p_fora", 0),
-            }
+        jog = item.get("jogador")
+        id_j = item.get("id_jogo")
+        if jog and id_j:
+          if jog not in palpites:
+            palpites[jog] = {}
+          palpites[jog][id_j] = {
+              "c": item.get("p_casa", 0),
+              "f": item.get("p_fora", 0),
+          }
   except Exception as e:
     pass
   return palpites
@@ -177,7 +121,6 @@ LISTA_MESES = [
     "Maio 2027",
 ]
 
-# Interface
 st.title("🏆 Liga de Prognósticos — AF Porto (Elite Série 2)")
 
 aba = st.sidebar.radio(
@@ -185,6 +128,9 @@ aba = st.sidebar.radio(
     ["📊 Classificações", "📝 Inserir Palpites", "⚙️ Painel Admin"],
 )
 
+# ---------------------------------------------------------
+# ABA 1: CLASSIFICAÇÕES
+# ---------------------------------------------------------
 if aba == "📊 Classificações":
   st.header("📊 Tabelas de Classificação")
   jogadores = list(palpites_dados.keys())
@@ -309,6 +255,9 @@ if aba == "📊 Classificações":
       df_j.index += 1
       st.table(df_j)
 
+# ---------------------------------------------------------
+# ABA 2: INSERIR PALPITES
+# ---------------------------------------------------------
 elif aba == "📝 Inserir Palpites":
   st.header("📝 Registar Prognósticos")
   j_ativa = obter_jornada_ativa()
@@ -333,9 +282,9 @@ elif aba == "📝 Inserir Palpites":
   if nome:
     jogos_j = jornadas_dados.get(str(j_ativa), [])
     if not jogos_j:
-      st.warning(
-          "Os jogos estão a ser sincronizados. Recarrega a página dentro de"
-          " segundos."
+      st.error(
+          "Ainda não existem jogos inseridos na base de dados para a Jornada"
+          f" {j_ativa}."
       )
     else:
       with st.form("form_palpites"):
@@ -382,6 +331,9 @@ elif aba == "📝 Inserir Palpites":
           st.success(f"Prognósticos de {nome} guardados com sucesso!")
           st.rerun()
 
+# ---------------------------------------------------------
+# ABA 3: PAINEL ADMIN
+# ---------------------------------------------------------
 elif aba == "⚙️ Painel Admin":
   st.header("⚙️ Painel de Administração")
   sub1, sub2 = st.tabs(["⚽ Inserir Resultados", "🗑️ Gerir / Apagar Jogadores"])
