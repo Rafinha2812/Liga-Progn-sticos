@@ -12,7 +12,13 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-OPCOES_CALENDARIO = ["Calendário.csv", "calendario.csv", "Calendario.csv"]
+# Nomes possíveis para o ficheiro do calendário no GitHub
+OPCOES_CALENDARIO = [
+    "calendario.csv",
+    "Calendario.csv",
+    "Calendário.csv",
+    "calendário.csv",
+]
 
 
 def obter_ficheiro_calendario():
@@ -22,20 +28,20 @@ def obter_ficheiro_calendario():
   return None
 
 
-# Carregar/Inicializar Calendário na Base de Dados se estiver vazia
+# Ler o ficheiro CSV e povoar a BD caso esteja vazia
 def inicializar_calendario_bd():
   try:
-    res = supabase.table("jornadas").select("id_jogo").execute()
+    res = supabase.table("jornadas").select("id_jogo").limit(1).execute()
     if not res.data:
       ficheiro = obter_ficheiro_calendario()
       if ficheiro:
         df_cal = pd.read_csv(ficheiro)
         dados_para_inserir = []
         for idx, row in df_cal.iterrows():
-          j_num = row["jornada"]
+          j_num = int(row["jornada"])
           dados_para_inserir.append({
               "id_jogo": f"J{j_num}_G{idx+1}",
-              "jornada": int(j_num),
+              "jornada": j_num,
               "casa": str(row["casa"]).strip(),
               "fora": str(row["fora"]).strip(),
               "res_casa": None,
@@ -43,13 +49,13 @@ def inicializar_calendario_bd():
           })
         supabase.table("jornadas").insert(dados_para_inserir).execute()
   except Exception as e:
-    st.error(f"Erro a carregar calendário inicial: {e}")
+    st.error(f"Erro ao carregar calendário: {e}")
 
 
 inicializar_calendario_bd()
 
 
-# Funções de Leitura e Escrita na BD
+# Leitura de Jornadas e Palpites a partir do Supabase
 def carregar_jornadas_bd():
   jornadas = {}
   try:
@@ -67,7 +73,7 @@ def carregar_jornadas_bd():
             jornadas[j_str] = []
           jornadas[j_str].append(item)
   except Exception as e:
-    st.error(f"Erro ao carregar jornadas da base de dados: {e}")
+    st.error(f"Erro BD Jornadas: {e}")
   return jornadas
 
 
@@ -88,7 +94,7 @@ def carregar_palpites_bd():
                 "f": item.get("p_fora", 0),
             }
   except Exception as e:
-    st.error(f"Erro ao carregar palpites da base de dados: {e}")
+    st.error(f"Erro BD Palpites: {e}")
   return palpites
 
 
@@ -161,7 +167,7 @@ LISTA_MESES = [
     "Maio 2027",
 ]
 
-# Interface
+# Interface Principal
 st.title("🏆 Liga de Prognósticos — AF Porto (Elite Série 2)")
 
 aba = st.sidebar.radio(
@@ -330,8 +336,8 @@ elif aba == "📝 Inserir Palpites":
     jogos_j = jornadas_dados.get(str(j_ativa), [])
     if not jogos_j:
       st.warning(
-          "O calendário ainda está a ser inicializado. Recarrega a página dentro"
-          " de alguns segundos."
+          "O calendário está a ser carregado. Por favor recarrega a página em"
+          " alguns segundos."
       )
     else:
       with st.form("form_palpites"):
