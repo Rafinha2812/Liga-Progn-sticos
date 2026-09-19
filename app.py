@@ -11,7 +11,9 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# CALENDÁRIO LOCAL
+# ---------------------------------------------------------
+# CALENDÁRIO OFICIAL EMBUTIDO (JORNADAS 1 A 30 COMPLETO)
+# ---------------------------------------------------------
 CALENDARIO_LOCAL = {
     "1": [
         {"id_jogo": "J1_G1", "casa": "S.C. Castêlo Maia", "fora": "A.D. Grijó"},
@@ -320,12 +322,15 @@ def carregar_resultados_bd():
   resultados = {}
   try:
     res = supabase.table("jornadas").select("*").execute()
-    if res.data:
+    if res and hasattr(res, "data") and res.data:
       for item in res.data:
-        resultados[item["id_jogo"]] = {
-            "res_casa": item.get("res_casa"),
-            "res_fora": item.get("res_fora"),
-        }
+        if isinstance(item, dict):
+          id_j = item.get("id_jogo")
+          if id_j:
+            resultados[id_j] = {
+                "res_casa": item.get("res_casa"),
+                "res_fora": item.get("res_fora"),
+            }
   except Exception as e:
     st.sidebar.error(f"Erro ao carregar resultados: {e}")
   return resultados
@@ -335,17 +340,18 @@ def carregar_palpites_bd():
   palpites = {}
   try:
     res = supabase.table("palpites").select("*").execute()
-    if res.data:
+    if res and hasattr(res, "data") and res.data:
       for item in res.data:
-        jog = item.get("jogador")
-        id_j = item.get("id_jogo")
-        if jog and id_j:
-          if jog not in palpites:
-            palpites[jog] = {}
-          palpites[jog][id_j] = {
-              "c": item.get("p_casa", 0),
-              "f": item.get("p_fora", 0),
-          }
+        if isinstance(item, dict):
+          jog = item.get("jogador")
+          id_j = item.get("id_jogo")
+          if jog and id_j:
+            if jog not in palpites:
+              palpites[jog] = {}
+            palpites[jog][id_j] = {
+                "c": item.get("p_casa", 0),
+                "f": item.get("p_fora", 0),
+            }
   except Exception as e:
     st.sidebar.error(f"Erro ao carregar palpites: {e}")
   return palpites
@@ -601,19 +607,18 @@ elif aba == "📝 Inserir Palpites":
 
       if st.form_submit_button("Guardar Prognósticos"):
         try:
-          registos = []
+          # Inserção direta item por item para evitar rejeição por chaves duplicadas
           for id_j, val in novos_p.items():
-            registos.append({
+            supabase.table("palpites").delete().eq("jogador", nome).eq(
+                "id_jogo", id_j
+            ).execute()
+            supabase.table("palpites").insert({
                 "jogador": nome,
                 "id_jogo": id_j,
                 "p_casa": val["c"],
                 "p_fora": val["f"],
-            })
-          res = (
-              supabase.table("palpites")
-              .upsert(registos, on_conflict="jogador,id_jogo")
-              .execute()
-          )
+            }).execute()
+
           st.success(f"Prognósticos de {nome} guardados com sucesso!")
           st.rerun()
         except Exception as e:
@@ -663,19 +668,18 @@ elif aba == "⚙️ Painel Admin":
 
       if st.form_submit_button("Guardar Resultados"):
         try:
-          registos_jornada = []
           for nr in novos_res:
             res_c = nr["c"] if marcar_fechado else None
             res_f = nr["f"] if marcar_fechado else None
-            registos_jornada.append({
+            supabase.table("jornadas").delete().eq(
+                "id_jogo", nr["id_jogo"]
+            ).execute()
+            supabase.table("jornadas").insert({
                 "id_jogo": nr["id_jogo"],
                 "jornada": j_sel,
                 "res_casa": res_c,
                 "res_fora": res_f,
-            })
-          supabase.table("jornadas").upsert(
-              registos_jornada, on_conflict="id_jogo"
-          ).execute()
+            }).execute()
           st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
           st.rerun()
         except Exception as e:
