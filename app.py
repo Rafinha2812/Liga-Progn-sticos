@@ -327,7 +327,7 @@ def carregar_resultados_bd():
             "res_fora": item.get("res_fora"),
         }
   except Exception as e:
-    pass
+    st.sidebar.error(f"Erro ao carregar resultados: {e}")
   return resultados
 
 
@@ -347,7 +347,7 @@ def carregar_palpites_bd():
               "f": item.get("p_fora", 0),
           }
   except Exception as e:
-    pass
+    st.sidebar.error(f"Erro ao carregar palpites: {e}")
   return palpites
 
 
@@ -601,12 +601,6 @@ elif aba == "📝 Inserir Palpites":
 
       if st.form_submit_button("Guardar Prognósticos"):
         try:
-          # Elimina registos anteriores do mesmo jogador nesta jornada para não duplicar
-          for id_j in novos_p.keys():
-            supabase.table("palpites").delete().eq("jogador", nome).eq(
-                "id_jogo", id_j
-            ).execute()
-
           registos = []
           for id_j, val in novos_p.items():
             registos.append({
@@ -615,11 +609,15 @@ elif aba == "📝 Inserir Palpites":
                 "p_casa": val["c"],
                 "p_fora": val["f"],
             })
-          supabase.table("palpites").insert(registos).execute()
+          res = (
+              supabase.table("palpites")
+              .upsert(registos, on_conflict="jogador,id_jogo")
+              .execute()
+          )
           st.success(f"Prognósticos de {nome} guardados com sucesso!")
           st.rerun()
         except Exception as e:
-          st.error(f"Erro ao guardar palpites no Supabase: {e}")
+          st.error(f"Erro ao guardar no Supabase: {e}")
 
 # ---------------------------------------------------------
 # ABA 3: PAINEL ADMIN
@@ -664,20 +662,24 @@ elif aba == "⚙️ Painel Admin":
       )
 
       if st.form_submit_button("Guardar Resultados"):
-        for nr in novos_res:
-          res_c = nr["c"] if marcar_fechado else None
-          res_f = nr["f"] if marcar_fechado else None
-          supabase.table("jornadas").delete().eq(
-              "id_jogo", nr["id_jogo"]
+        try:
+          registos_jornada = []
+          for nr in novos_res:
+            res_c = nr["c"] if marcar_fechado else None
+            res_f = nr["f"] if marcar_fechado else None
+            registos_jornada.append({
+                "id_jogo": nr["id_jogo"],
+                "jornada": j_sel,
+                "res_casa": res_c,
+                "res_fora": res_f,
+            })
+          supabase.table("jornadas").upsert(
+              registos_jornada, on_conflict="id_jogo"
           ).execute()
-          supabase.table("jornadas").insert({
-              "id_jogo": nr["id_jogo"],
-              "jornada": j_sel,
-              "res_casa": res_c,
-              "res_fora": res_f,
-          }).execute()
-        st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
-        st.rerun()
+          st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"Erro ao guardar resultados no Supabase: {e}")
 
   with sub2:
     st.subheader("Eliminar Participante")
@@ -689,6 +691,9 @@ elif aba == "⚙️ Painel Admin":
           "Seleciona o jogador a eliminar:", sorted(lista_jogs)
       )
       if st.button("❌ Eliminar Jogador"):
-        supabase.table("palpites").delete().eq("jogador", jog_del).execute()
-        st.success(f"O participante '{jog_del}' foi eliminado!")
-        st.rerun()
+        try:
+          supabase.table("palpites").delete().eq("jogador", jog_del).execute()
+          st.success(f"O participante '{jog_del}' foi eliminado!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"Erro ao eliminar participante: {e}")
