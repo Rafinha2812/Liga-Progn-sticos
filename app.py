@@ -11,9 +11,7 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ---------------------------------------------------------
-# CALENDÁRIO OFICIAL EMBUTIDO (JORNADAS 1 A 30 COMPLETO)
-# ---------------------------------------------------------
+# CALENDÁRIO LOCAL
 CALENDARIO_LOCAL = {
     "1": [
         {"id_jogo": "J1_G1", "casa": "S.C. Castêlo Maia", "fora": "A.D. Grijó"},
@@ -551,7 +549,7 @@ if aba == "📊 Classificações":
       st.table(df_j)
 
 # ---------------------------------------------------------
-# ABA 2: INSERIR PALPITES (OPÇÃO SEMPRE VISÍVEL)
+# ABA 2: INSERIR PALPITES
 # ---------------------------------------------------------
 elif aba == "📝 Inserir Palpites":
   st.header("📝 Registar Prognósticos")
@@ -560,7 +558,6 @@ elif aba == "📝 Inserir Palpites":
 
   lista_existentes = list(palpites_dados.keys())
 
-  # O radio button aparece SEMPRE
   opcao_jog = st.radio(
       "Identificação do Apostador:",
       ["Apostador Existente", "Novo Apostador"],
@@ -603,19 +600,26 @@ elif aba == "📝 Inserir Palpites":
         novos_p[id_j] = {"c": pc, "f": pf}
 
       if st.form_submit_button("Guardar Prognósticos"):
-        registos = []
-        for id_j, val in novos_p.items():
-          registos.append({
-              "jogador": nome,
-              "id_jogo": id_j,
-              "p_casa": val["c"],
-              "p_fora": val["f"],
-          })
-        supabase.table("palpites").upsert(
-            registos, on_conflict="jogador,id_jogo"
-        ).execute()
-        st.success(f"Prognósticos de {nome} guardados com sucesso!")
-        st.rerun()
+        try:
+          # Elimina registos anteriores do mesmo jogador nesta jornada para não duplicar
+          for id_j in novos_p.keys():
+            supabase.table("palpites").delete().eq("jogador", nome).eq(
+                "id_jogo", id_j
+            ).execute()
+
+          registos = []
+          for id_j, val in novos_p.items():
+            registos.append({
+                "jogador": nome,
+                "id_jogo": id_j,
+                "p_casa": val["c"],
+                "p_fora": val["f"],
+            })
+          supabase.table("palpites").insert(registos).execute()
+          st.success(f"Prognósticos de {nome} guardados com sucesso!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"Erro ao guardar palpites no Supabase: {e}")
 
 # ---------------------------------------------------------
 # ABA 3: PAINEL ADMIN
@@ -660,19 +664,18 @@ elif aba == "⚙️ Painel Admin":
       )
 
       if st.form_submit_button("Guardar Resultados"):
-        registos_jornada = []
         for nr in novos_res:
           res_c = nr["c"] if marcar_fechado else None
           res_f = nr["f"] if marcar_fechado else None
-          registos_jornada.append({
+          supabase.table("jornadas").delete().eq(
+              "id_jogo", nr["id_jogo"]
+          ).execute()
+          supabase.table("jornadas").insert({
               "id_jogo": nr["id_jogo"],
               "jornada": j_sel,
               "res_casa": res_c,
               "res_fora": res_f,
-          })
-        supabase.table("jornadas").upsert(
-            registos_jornada, on_conflict="id_jogo"
-        ).execute()
+          }).execute()
         st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
         st.rerun()
 
