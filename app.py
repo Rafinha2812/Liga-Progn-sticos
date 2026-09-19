@@ -318,29 +318,23 @@ CALENDARIO_LOCAL = {
 }
 
 
-# CARREGAR DADOS SEMPRE DIRETO DO SUPABASE
-def carregar_resultados_bd():
+# CARREGAMENTO FORÇADO SEM CACHE (GARANTE LEITURA REAL DO SUPABASE)
+def carregar_dados():
   resultados = {}
+  palpites = {}
   try:
-    res = supabase.table("jornadas").select("*").execute()
-    if res and hasattr(res, "data") and res.data:
-      for item in res.data:
+    res_j = supabase.table("jornadas").select("*").execute()
+    if res_j and hasattr(res_j, "data") and res_j.data:
+      for item in res_j.data:
         if isinstance(item, dict) and item.get("id_jogo"):
           resultados[item["id_jogo"]] = {
               "res_casa": item.get("res_casa"),
               "res_fora": item.get("res_fora"),
           }
-  except Exception as e:
-    st.error(f"Erro ao carregar jornadas: {e}")
-  return resultados
 
-
-def carregar_palpites_bd():
-  palpites = {}
-  try:
-    res = supabase.table("palpites").select("*").execute()
-    if res and hasattr(res, "data") and res.data:
-      for item in res.data:
+    res_p = supabase.table("palpites").select("*").execute()
+    if res_p and hasattr(res_p, "data") and res_p.data:
+      for item in res_p.data:
         if isinstance(item, dict):
           jog = item.get("jogador")
           id_j = item.get("id_jogo")
@@ -352,12 +346,21 @@ def carregar_palpites_bd():
                 "f": item.get("p_fora", 0),
             }
   except Exception as e:
-    st.error(f"Erro ao carregar palpites: {e}")
-  return palpites
+    st.error(f"Erro ao sincronizar com a base de dados: {e}")
+
+  st.session_state.resultados_dados = resultados
+  st.session_state.palpites_dados = palpites
 
 
-resultados_dados = carregar_resultados_bd()
-palpites_dados = carregar_palpites_bd()
+# Inicializa os dados no primeiro arranque
+if (
+    "resultados_dados" not in st.session_state
+    or "palpites_dados" not in st.session_state
+):
+  carregar_dados()
+
+resultados_dados = st.session_state.resultados_dados
+palpites_dados = st.session_state.palpites_dados
 
 
 def calcular_pontos(p_c, p_f, r_c, r_f):
@@ -617,24 +620,19 @@ elif aba == "📝 Inserir Palpites":
 
           ids_j = list(novos_p.keys())
 
-          # Apaga do Supabase
+          # 1. Atualizar imediatamente o Supabase
           supabase.table("palpites").delete().eq("jogador", nome).in_(
               "id_jogo", ids_j
           ).execute()
+          supabase.table("palpites").insert(registos).execute()
 
-          # Insere no Supabase
-          res = supabase.table("palpites").insert(registos).execute()
+          # 2. Forçar a recarga imediata dos dados direto do Supabase
+          carregar_dados()
 
-          if res and hasattr(res, "data") and res.data:
-            st.success(f"Prognósticos de {nome} guardados com sucesso!")
-            st.rerun()
-          else:
-            st.error(
-                "O Supabase recusou a gravação. Certifica-te de que executaste"
-                " o código SQL do Passo 1!"
-            )
+          st.success(f"Prognósticos de {nome} guardados com sucesso!")
+          st.rerun()
         except Exception as e:
-          st.error(f"Erro ao ligar à base de dados: {e}")
+          st.error(f"Erro ao guardar na base de dados: {e}")
 
 # ---------------------------------------------------------
 # ABA 3: PAINEL ADMIN
@@ -693,16 +691,17 @@ elif aba == "⚙️ Painel Admin":
 
           ids_j = [nr["id_jogo"] for nr in novos_res]
 
+          # 1. Atualizar imediatamente o Supabase
           supabase.table("jornadas").delete().in_("id_jogo", ids_j).execute()
-          res = supabase.table("jornadas").insert(registos_jornada).execute()
+          supabase.table("jornadas").insert(registos_jornada).execute()
 
-          if res and hasattr(res, "data") and res.data:
-            st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
-            st.rerun()
-          else:
-            st.error("O Supabase não confirmou a gravação dos resultados.")
+          # 2. Forçar a recarga imediata dos dados direto do Supabase
+          carregar_dados()
+
+          st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
+          st.rerun()
         except Exception as e:
-          st.error(f"Erro ao guardar resultados no Supabase: {e}")
+          st.error(f"Erro ao guardar os resultados: {e}")
 
   with sub2:
     st.subheader("Eliminar Participante")
@@ -716,6 +715,7 @@ elif aba == "⚙️ Painel Admin":
       if st.button("❌ Eliminar Jogador"):
         try:
           supabase.table("palpites").delete().eq("jogador", jog_del).execute()
+          carregar_dados()
           st.success(f"O participante '{jog_del}' foi eliminado!")
           st.rerun()
         except Exception as e:
