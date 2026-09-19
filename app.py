@@ -318,6 +318,7 @@ CALENDARIO_LOCAL = {
 }
 
 
+# CARREGAR DADOS DIRETO DA BASE DE DADOS
 def carregar_resultados_bd():
   resultados = {}
   try:
@@ -607,26 +608,35 @@ elif aba == "📝 Inserir Palpites":
 
       if st.form_submit_button("Guardar Prognósticos"):
         try:
-          # 1. Limpa palpites prévios do apostador nesta jornada
-          ids_jornada = [j["id_jogo"] for j in jogos_j]
-          for id_j in ids_jornada:
-            supabase.table("palpites").delete().eq("jogador", nome).eq(
-                "id_jogo", id_j
-            ).execute()
-
-          # 2. Insere os palpites de forma individual
+          # Gravação em lote numa única chamada síncrona
+          registos_novos = []
           for id_j, val in novos_p.items():
-            supabase.table("palpites").insert({
+            registos_novos.append({
                 "jogador": nome,
                 "id_jogo": id_j,
                 "p_casa": val["c"],
                 "p_fora": val["f"],
-            }).execute()
+            })
+
+          # 1. Elimina todos os antigos em bloco
+          ids_jornada = [j["id_jogo"] for j in jogos_j]
+          supabase.table("palpites").delete().eq("jogador", nome).in_(
+              "id_jogo", ids_jornada
+          ).execute()
+
+          # 2. Insere todos os novos em bloco
+          supabase.table("palpites").insert(registos_novos).execute()
+
+          # 3. Atualiza os dados locais diretamente na memória sem esperar pelo rerun
+          if nome not in palpites_dados:
+            palpites_dados[nome] = {}
+          for id_j, val in novos_p.items():
+            palpites_dados[nome][id_j] = {"c": val["c"], "f": val["f"]}
 
           st.success(f"Prognósticos de {nome} guardados com sucesso!")
           st.rerun()
         except Exception as e:
-          st.error(f"Erro na comunicação com a base de dados: {e}")
+          st.error(f"Erro ao guardar na base de dados: {e}")
 
 # ---------------------------------------------------------
 # ABA 3: PAINEL ADMIN
@@ -672,22 +682,27 @@ elif aba == "⚙️ Painel Admin":
 
       if st.form_submit_button("Guardar Resultados"):
         try:
+          registos_res = []
           for nr in novos_res:
             res_c = nr["c"] if marcar_fechado else None
             res_f = nr["f"] if marcar_fechado else None
-            supabase.table("jornadas").delete().eq(
-                "id_jogo", nr["id_jogo"]
-            ).execute()
-            supabase.table("jornadas").insert({
+            registos_res.append({
                 "id_jogo": nr["id_jogo"],
                 "jornada": j_sel,
                 "res_casa": res_c,
                 "res_fora": res_f,
-            }).execute()
+            })
+
+          ids_jornada = [nr["id_jogo"] for nr in novos_res]
+          supabase.table("jornadas").delete().in_(
+              "id_jogo", ids_jornada
+          ).execute()
+          supabase.table("jornadas").insert(registos_res).execute()
+
           st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
           st.rerun()
         except Exception as e:
-          st.error(f"Erro ao guardar os resultados: {e}")
+          st.error(f"Erro ao guardar resultados: {e}")
 
   with sub2:
     st.subheader("Eliminar Participante")
