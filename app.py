@@ -377,13 +377,12 @@ def calcular_pontos(p_c, p_f, r_c, r_f):
   if r_c is None or r_f is None or p_c is None or p_f is None:
     return 0
   if p_c == r_c and p_f == r_f:
-    return 3
+    return 3  # <--- AGORA VALE 3 PONTOS
   tend_p = (p_c > p_f) - (p_c < p_f)
   tend_r = (r_c > r_f) - (r_c < r_f)
   if tend_p == tend_r:
     return 1
   return 0
-
 
 def jornada_concluida(num_jornada):
   jogos = CALENDARIO_LOCAL.get(str(num_jornada), [])
