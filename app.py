@@ -1,19 +1,25 @@
+import json
+import base64
+import requests
 import pandas as pd
 import streamlit as st
-from supabase import create_client
 
 st.set_page_config(
     page_title="Liga de Prognósticos — AF Porto Elite S2", layout="wide"
 )
 
-# Conexão ao Supabase
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Configurações do GitHub via Secrets
+GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]
+GITHUB_REPO = st.secrets["GITHUB_REPO"]
+FILE_PATH = "dados_liga.json"
+URL_API = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{FILE_PATH}"
 
-# ---------------------------------------------------------
+HEADERS = {
+    "Authorization": f"token {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github.v3+json",
+}
+
 # CALENDÁRIO OFICIAL EMBUTIDO (JORNADAS 1 A 30 COMPLETO)
-# ---------------------------------------------------------
 CALENDARIO_LOCAL = {
     "1": [
         {"id_jogo": "J1_G1", "casa": "S.C. Castêlo Maia", "fora": "A.D. Grijó"},
@@ -318,46 +324,55 @@ CALENDARIO_LOCAL = {
 }
 
 
-# CARREGAMENTO FORÇADO SEM CACHE (GARANTE LEITURA REAL DO SUPABASE)
-def carregar_dados():
-  resultados = {}
-  palpites = {}
+# FUNÇÕES DE LEITURA E ESCRITA NO GITHUB
+def carregar_dados_github():
   try:
-    res_j = supabase.table("jornadas").select("*").execute()
-    if res_j and hasattr(res_j, "data") and res_j.data:
-      for item in res_j.data:
-        if isinstance(item, dict) and item.get("id_jogo"):
-          resultados[item["id_jogo"]] = {
-              "res_casa": item.get("res_casa"),
-              "res_fora": item.get("res_fora"),
-          }
-
-    res_p = supabase.table("palpites").select("*").execute()
-    if res_p and hasattr(res_p, "data") and res_p.data:
-      for item in res_p.data:
-        if isinstance(item, dict):
-          jog = item.get("jogador")
-          id_j = item.get("id_jogo")
-          if jog and id_j:
-            if jog not in palpites:
-              palpites[jog] = {}
-            palpites[jog][id_j] = {
-                "c": item.get("p_casa", 0),
-                "f": item.get("p_fora", 0),
-            }
-  except Exception as e:
-    st.error(f"Erro ao sincronizar com a base de dados: {e}")
-
-  st.session_state.resultados_dados = resultados
-  st.session_state.palpites_dados = palpites
+    res = requests.get(URL_API, headers=HEADERS)
+    if res.status_code == 200:
+      conteudo = res.json()
+      dados_json = json.loads(
+          base64.b64decode(conteudo["content"]).decode("utf-8")
+      )
+      st.session_state.sha = conteudo["sha"]
+      return dados_json.get("resultados", {}), dados_json.get("palpites", {})
+  except Exception:
+    pass
+  return {}, {}
 
 
-# Inicializa os dados no primeiro arranque
+def guardar_dados_github():
+  dados_para_salvar = {
+      "resultados": st.session_state.resultados_dados,
+      "palpites": st.session_state.palpites_dados,
+  }
+  conteudo_b64 = base64.b64encode(
+      json.dumps(dados_para_salvar, indent=2).encode("utf-8")
+  ).decode("utf-8")
+
+  payload = {
+      "message": "Atualização automática de palpites/resultados",
+      "content": conteudo_b64,
+  }
+  if "sha" in st.session_state:
+    payload["sha"] = st.session_state.sha
+
+  try:
+    res = requests.put(URL_API, headers=HEADERS, json=payload)
+    if res.status_code in [200, 201]:
+      st.session_state.sha = res.json()["content"]["sha"]
+      return True
+  except Exception:
+    pass
+  return False
+
+
 if (
     "resultados_dados" not in st.session_state
     or "palpites_dados" not in st.session_state
 ):
-  carregar_dados()
+  res_i, palp_i = carregar_dados_github()
+  st.session_state.resultados_dados = res_i
+  st.session_state.palpites_dados = palp_i
 
 resultados_dados = st.session_state.resultados_dados
 palpites_dados = st.session_state.palpites_dados
@@ -608,31 +623,18 @@ elif aba == "📝 Inserir Palpites":
         novos_p[id_j] = {"c": pc, "f": pf}
 
       if st.form_submit_button("Guardar Prognósticos"):
-        try:
-          registos = []
-          for id_j, val in novos_p.items():
-            registos.append({
-                "jogador": nome,
-                "id_jogo": id_j,
-                "p_casa": val["c"],
-                "p_fora": val["f"],
-            })
+        if nome not in st.session_state.palpites_dados:
+          st.session_state.palpites_dados[nome] = {}
 
-          ids_j = list(novos_p.keys())
+        for id_j, val in novos_p.items():
+          st.session_state.palpites_dados[nome][id_j] = {
+              "c": val["c"],
+              "f": val["f"],
+          }
 
-          # 1. Atualizar imediatamente o Supabase
-          supabase.table("palpites").delete().eq("jogador", nome).in_(
-              "id_jogo", ids_j
-          ).execute()
-          supabase.table("palpites").insert(registos).execute()
-
-          # 2. Forçar a recarga imediata dos dados direto do Supabase
-          carregar_dados()
-
-          st.success(f"Prognósticos de {nome} guardados com sucesso!")
-          st.rerun()
-        except Exception as e:
-          st.error(f"Erro ao guardar na base de dados: {e}")
+        guardar_dados_github()
+        st.success(f"Prognósticos de {nome} guardados com sucesso!")
+        st.rerun()
 
 # ---------------------------------------------------------
 # ABA 3: PAINEL ADMIN
@@ -677,31 +679,17 @@ elif aba == "⚙️ Painel Admin":
       )
 
       if st.form_submit_button("Guardar Resultados"):
-        try:
-          registos_jornada = []
-          for nr in novos_res:
-            res_c = nr["c"] if marcar_fechado else None
-            res_f = nr["f"] if marcar_fechado else None
-            registos_jornada.append({
-                "id_jogo": nr["id_jogo"],
-                "jornada": j_sel,
-                "res_casa": res_c,
-                "res_fora": res_f,
-            })
+        for nr in novos_res:
+          res_c = nr["c"] if marcar_fechado else None
+          res_f = nr["f"] if marcar_fechado else None
+          st.session_state.resultados_dados[nr["id_jogo"]] = {
+              "res_casa": res_c,
+              "res_fora": res_f,
+          }
 
-          ids_j = [nr["id_jogo"] for nr in novos_res]
-
-          # 1. Atualizar imediatamente o Supabase
-          supabase.table("jornadas").delete().in_("id_jogo", ids_j).execute()
-          supabase.table("jornadas").insert(registos_jornada).execute()
-
-          # 2. Forçar a recarga imediata dos dados direto do Supabase
-          carregar_dados()
-
-          st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
-          st.rerun()
-        except Exception as e:
-          st.error(f"Erro ao guardar os resultados: {e}")
+        guardar_dados_github()
+        st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
+        st.rerun()
 
   with sub2:
     st.subheader("Eliminar Participante")
@@ -713,10 +701,8 @@ elif aba == "⚙️ Painel Admin":
           "Seleciona o jogador a eliminar:", sorted(lista_jogs)
       )
       if st.button("❌ Eliminar Jogador"):
-        try:
-          supabase.table("palpites").delete().eq("jogador", jog_del).execute()
-          carregar_dados()
-          st.success(f"O participante '{jog_del}' foi eliminado!")
-          st.rerun()
-        except Exception as e:
-          st.error(f"Erro ao eliminar participante: {e}")
+        if jog_del in st.session_state.palpites_dados:
+          del st.session_state.palpites_dados[jog_del]
+        guardar_dados_github()
+        st.success(f"O participante '{jog_del}' foi eliminado!")
+        st.rerun()
