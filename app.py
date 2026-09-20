@@ -366,7 +366,7 @@ def guardar_dados_github():
   return False
 
 
-# Sincroniza dados sempre na leitura da página
+# Sincroniza dados na leitura
 resultados_dados, palpites_dados = carregar_dados_github()
 st.session_state.resultados_dados = resultados_dados
 st.session_state.palpites_dados = palpites_dados
@@ -577,30 +577,41 @@ elif aba == "📝 Inserir Palpites":
 
   opcao_jog = st.radio(
       "Identificação do Apostador:",
-      ["Apostador Existente", "Novo Apostador"],
+      ["-- Selecionar Opção --", "Apostador Existente", "Novo Apostador"],
       horizontal=True,
   )
 
   nome = ""
+
   if opcao_jog == "Apostador Existente":
     if lista_existentes:
-      opcoes_com_placeholder = ["-- Seleciona o teu nome --"] + sorted(
-          lista_existentes
-      )
-      escolha = st.selectbox(
-          "Seleciona o teu nome:", opcoes_com_placeholder, index=0
-      )
-      if escolha != "-- Seleciona o teu nome --":
-        nome = escolha
+      # Cria um botão explícito para mostrar/abrir a lista de jogadores
+      if "mostrar_lista_jogadores" not in st.session_state:
+        st.session_state.mostrar_lista_jogadores = False
+
+      col_btn, _ = st.columns([1, 2])
+      with col_btn:
+        if st.button("📋 Ver / Selecionar Apostador Existente"):
+          st.session_state.mostrar_lista_jogadores = True
+
+      if st.session_state.mostrar_lista_jogadores:
+        opcoes_com_placeholder = ["-- Seleciona o teu nome da lista --"] + sorted(
+            lista_existentes
+        )
+        escolha = st.selectbox("Apostador:", opcoes_com_placeholder, index=0)
+        if escolha != "-- Seleciona o teu nome da lista --":
+          nome = escolha
     else:
       st.warning(
           "Ainda não existem apostadores registados. Seleciona 'Novo"
           " Apostador' para criar o primeiro."
       )
-  else:
+
+  elif opcao_jog == "Novo Apostador":
+    st.session_state.mostrar_lista_jogadores = False
     nome = st.text_input("Escreve o teu Nome / Alcunha:").strip()
 
-  # O formulário só abre quando houver um nome válido selecionado
+  # O FORMULÁRIO SÓ É CONSTRUÍDO E MOSTRADO QUANDO UM NOME VÁLIDO FOR DEFINIDO
   if nome:
     jogos_j = CALENDARIO_LOCAL.get(str(j_ativa), [])
     palpites_do_jogador = palpites_dados.get(nome, {})
@@ -652,6 +663,7 @@ elif aba == "📝 Inserir Palpites":
 
         if guardar_dados_github():
           st.success(f"Prognósticos de {nome} guardados com sucesso no GitHub!")
+          st.session_state.mostrar_lista_jogadores = False
           st.rerun()
         else:
           st.error("Erro ao guardar os dados no GitHub. Verifica o Token.")
