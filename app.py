@@ -574,6 +574,9 @@ if aba == "📊 Classificações":
 # ---------------------------------------------------------
 # ABA 2: INSERIR PALPITES
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# ABA 2: INSERIR PALPITES
+# ---------------------------------------------------------
 elif aba == "📝 Inserir Palpites":
   st.header("📝 Registar Prognósticos")
   j_ativa = obter_jornada_ativa()
@@ -606,17 +609,30 @@ elif aba == "📝 Inserir Palpites":
       novos_p = {}
       for jogo in jogos_j:
         id_j = jogo["id_jogo"]
+
+        # Busca o palpite antigo do jogador selecionado (se não existir, assume 0)
         p_ant = palpites_dados.get(nome, {}).get(id_j, {"c": 0, "f": 0})
+
         col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
         with col1:
           st.write(f"**{jogo['casa']}**")
         with col2:
+          # A key agora usa o NOME do jogador para forçar a atualização ao trocar de seleção
           pc = st.number_input(
-              "", min_value=0, max_value=15, value=p_ant["c"], key=f"p_c_{id_j}"
+              "",
+              min_value=0,
+              max_value=15,
+              value=p_ant["c"],
+              key=f"p_c_{nome}_{id_j}",
           )
         with col3:
+          # A key agora usa o NOME do jogador
           pf = st.number_input(
-              "", min_value=0, max_value=15, value=p_ant["f"], key=f"p_f_{id_j}"
+              "",
+              min_value=0,
+              max_value=15,
+              value=p_ant["f"],
+              key=f"p_f_{nome}_{id_j}",
           )
         with col4:
           st.write(f"**{jogo['fora']}**")
@@ -635,7 +651,7 @@ elif aba == "📝 Inserir Palpites":
         guardar_dados_github()
         st.success(f"Prognósticos de {nome} guardados com sucesso!")
         st.rerun()
-
+          
 # ---------------------------------------------------------
 # ABA 3: PAINEL ADMIN
 # ---------------------------------------------------------
