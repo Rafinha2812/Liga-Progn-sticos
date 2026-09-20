@@ -372,11 +372,12 @@ st.session_state.resultados_dados = resultados_dados
 st.session_state.palpites_dados = palpites_dados
 
 
+# REGRA DE PONTUAÇÃO: RESULTADO EXATO = 3 PONTOS | TENDÊNCIA CERTA = 1 PONTO
 def calcular_pontos(p_c, p_f, r_c, r_f):
   if r_c is None or r_f is None or p_c is None or p_f is None:
     return 0
   if p_c == r_c and p_f == r_f:
-    return 2
+    return 3
   tend_p = (p_c > p_f) - (p_c < p_f)
   tend_r = (r_c > r_f) - (r_c < r_f)
   if tend_p == tend_r:
@@ -476,7 +477,7 @@ if aba == "📊 Classificações":
             if palp and rc is not None and rf is not None:
               pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
               pts_t[jog] += pts
-              if pts == 2:
+              if pts == 3:
                 ex_t[jog] += 1
               elif pts == 1:
                 tend_t[jog] += 1
@@ -485,7 +486,7 @@ if aba == "📊 Classificações":
           pd.DataFrame({
               "Participante": jogadores,
               "Pontos Totais": [pts_t[j] for j in jogadores],
-              "Resultados Exatos (2 pts)": [ex_t[j] for j in jogadores],
+              "Resultados Exatos (3 pts)": [ex_t[j] for j in jogadores],
               "Tendências Certas (1 pt)": [tend_t[j] for j in jogadores],
           })
           .sort_values(by="Pontos Totais", ascending=False)
@@ -513,7 +514,7 @@ if aba == "📊 Classificações":
               if palp and rc is not None and rf is not None:
                 pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
                 pts_m[jog] += pts
-                if pts == 2:
+                if pts == 3:
                   ex_m[jog] += 1
                 elif pts == 1:
                   tend_m[jog] += 1
@@ -521,7 +522,7 @@ if aba == "📊 Classificações":
           pd.DataFrame({
               "Participante": jogadores,
               f"Pontos ({mes_sel})": [pts_m[j] for j in jogadores],
-              "Resultados Exatos (2 pts)": [ex_m[j] for j in jogadores],
+              "Resultados Exatos (3 pts)": [ex_m[j] for j in jogadores],
               "Tendências Certas (1 pt)": [tend_m[j] for j in jogadores],
           })
           .sort_values(by=f"Pontos ({mes_sel})", ascending=False)
@@ -548,7 +549,7 @@ if aba == "📊 Classificações":
           if palp and rc is not None and rf is not None:
             pts = calcular_pontos(palp["c"], palp["f"], rc, rf)
             pts_j[jog] += pts
-            if pts == 2:
+            if pts == 3:
               ex_j[jog] += 1
             elif pts == 1:
               tend_j[jog] += 1
@@ -556,7 +557,7 @@ if aba == "📊 Classificações":
           pd.DataFrame({
               "Participante": jogadores,
               f"Pontos J{j_sel_tab}": [pts_j[j] for j in jogadores],
-              "Resultados Exatos (2 pts)": [ex_j[j] for j in jogadores],
+              "Resultados Exatos (3 pts)": [ex_j[j] for j in jogadores],
               "Tendências Certas (1 pt)": [tend_j[j] for j in jogadores],
           })
           .sort_values(by=f"Pontos J{j_sel_tab}", ascending=False)
@@ -577,7 +578,7 @@ elif aba == "📝 Inserir Palpites":
 
   opcao_jog = st.radio(
       "Identificação do Apostador:",
-      ["-- Selecionar Opção --", "Apostador Existente", "Novo Apostador"],
+      ["Apostador Existente", "Novo Apostador"],
       horizontal=True,
   )
 
@@ -585,22 +586,14 @@ elif aba == "📝 Inserir Palpites":
 
   if opcao_jog == "Apostador Existente":
     if lista_existentes:
-      # Cria um botão explícito para mostrar/abrir a lista de jogadores
-      if "mostrar_lista_jogadores" not in st.session_state:
-        st.session_state.mostrar_lista_jogadores = False
-
-      col_btn, _ = st.columns([1, 2])
-      with col_btn:
-        if st.button("📋 Ver / Selecionar Apostador Existente"):
-          st.session_state.mostrar_lista_jogadores = True
-
-      if st.session_state.mostrar_lista_jogadores:
-        opcoes_com_placeholder = ["-- Seleciona o teu nome da lista --"] + sorted(
-            lista_existentes
-        )
-        escolha = st.selectbox("Apostador:", opcoes_com_placeholder, index=0)
-        if escolha != "-- Seleciona o teu nome da lista --":
-          nome = escolha
+      opcoes_com_placeholder = ["-- Seleciona o teu nome --"] + sorted(
+          lista_existentes
+      )
+      escolha = st.selectbox(
+          "Seleciona o teu nome da lista:", opcoes_com_placeholder, index=0
+      )
+      if escolha != "-- Seleciona o teu nome --":
+        nome = escolha
     else:
       st.warning(
           "Ainda não existem apostadores registados. Seleciona 'Novo"
@@ -608,10 +601,9 @@ elif aba == "📝 Inserir Palpites":
       )
 
   elif opcao_jog == "Novo Apostador":
-    st.session_state.mostrar_lista_jogadores = False
     nome = st.text_input("Escreve o teu Nome / Alcunha:").strip()
 
-  # O FORMULÁRIO SÓ É CONSTRUÍDO E MOSTRADO QUANDO UM NOME VÁLIDO FOR DEFINIDO
+  # O FORMULÁRIO SÓ É EXIBIDO QUANDO HOUVER UM NOME DE APOSTADOR VÁLIDO
   if nome:
     jogos_j = CALENDARIO_LOCAL.get(str(j_ativa), [])
     palpites_do_jogador = palpites_dados.get(nome, {})
@@ -663,7 +655,6 @@ elif aba == "📝 Inserir Palpites":
 
         if guardar_dados_github():
           st.success(f"Prognósticos de {nome} guardados com sucesso no GitHub!")
-          st.session_state.mostrar_lista_jogadores = False
           st.rerun()
         else:
           st.error("Erro ao guardar os dados no GitHub. Verifica o Token.")
