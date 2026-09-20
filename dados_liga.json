@@ -1,36 +1,36 @@
 {
   "resultados": {
     "J1_G1": {
-      "res_casa": null,
-      "res_fora": null
+      "res_casa": 0,
+      "res_fora": 1
     },
     "J1_G2": {
-      "res_casa": null,
-      "res_fora": null
+      "res_casa": 1,
+      "res_fora": 2
     },
     "J1_G3": {
-      "res_casa": null,
-      "res_fora": null
+      "res_casa": 0,
+      "res_fora": 1
     },
     "J1_G4": {
-      "res_casa": null,
-      "res_fora": null
+      "res_casa": 3,
+      "res_fora": 1
     },
     "J1_G5": {
-      "res_casa": null,
-      "res_fora": null
+      "res_casa": 2,
+      "res_fora": 1
     },
     "J1_G6": {
-      "res_casa": null,
-      "res_fora": null
+      "res_casa": 2,
+      "res_fora": 4
     },
     "J1_G7": {
-      "res_casa": null,
-      "res_fora": null
+      "res_casa": 1,
+      "res_fora": 2
     },
     "J1_G8": {
-      "res_casa": null,
-      "res_fora": null
+      "res_casa": 0,
+      "res_fora": 4
     }
   },
   "palpites": {
