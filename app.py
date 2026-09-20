@@ -1,7 +1,7 @@
-import json
 import base64
-import requests
+import json
 import pandas as pd
+import requests
 import streamlit as st
 
 st.set_page_config(
@@ -324,7 +324,7 @@ CALENDARIO_LOCAL = {
 }
 
 
-# FUNÇÕES DE LEITURA E ESCRITA NO GITHUB
+# LEITURA E ESCRITA DIRETA NO GITHUB
 def carregar_dados_github():
   try:
     res = requests.get(URL_API, headers=HEADERS)
@@ -335,8 +335,8 @@ def carregar_dados_github():
       )
       st.session_state.sha = conteudo["sha"]
       return dados_json.get("resultados", {}), dados_json.get("palpites", {})
-  except Exception:
-    pass
+  except Exception as e:
+    st.error(f"Erro ao sincronizar com o GitHub: {e}")
   return {}, {}
 
 
@@ -350,7 +350,7 @@ def guardar_dados_github():
   ).decode("utf-8")
 
   payload = {
-      "message": "Atualização automática de palpites/resultados",
+      "message": "Atualização de palpites/resultados",
       "content": conteudo_b64,
   }
   if "sha" in st.session_state:
@@ -361,21 +361,15 @@ def guardar_dados_github():
     if res.status_code in [200, 201]:
       st.session_state.sha = res.json()["content"]["sha"]
       return True
-  except Exception:
-    pass
+  except Exception as e:
+    st.error(f"Erro ao gravar no GitHub: {e}")
   return False
 
 
-if (
-    "resultados_dados" not in st.session_state
-    or "palpites_dados" not in st.session_state
-):
-  res_i, palp_i = carregar_dados_github()
-  st.session_state.resultados_dados = res_i
-  st.session_state.palpites_dados = palp_i
-
-resultados_dados = st.session_state.resultados_dados
-palpites_dados = st.session_state.palpites_dados
+# Sincroniza dados sempre na leitura da página
+resultados_dados, palpites_dados = carregar_dados_github()
+st.session_state.resultados_dados = resultados_dados
+st.session_state.palpites_dados = palpites_dados
 
 
 def calcular_pontos(p_c, p_f, r_c, r_f):
@@ -574,9 +568,6 @@ if aba == "📊 Classificações":
 # ---------------------------------------------------------
 # ABA 2: INSERIR PALPITES
 # ---------------------------------------------------------
-# ---------------------------------------------------------
-# ABA 2: INSERIR PALPITES
-# ---------------------------------------------------------
 elif aba == "📝 Inserir Palpites":
   st.header("📝 Registar Prognósticos")
   j_ativa = obter_jornada_ativa()
@@ -593,7 +584,14 @@ elif aba == "📝 Inserir Palpites":
   nome = ""
   if opcao_jog == "Apostador Existente":
     if lista_existentes:
-      nome = st.selectbox("Seleciona o teu nome:", sorted(lista_existentes))
+      opcoes_com_placeholder = ["-- Seleciona o teu nome --"] + sorted(
+          lista_existentes
+      )
+      escolha = st.selectbox(
+          "Seleciona o teu nome:", opcoes_com_placeholder, index=0
+      )
+      if escolha != "-- Seleciona o teu nome --":
+        nome = escolha
     else:
       st.warning(
           "Ainda não existem apostadores registados. Seleciona 'Novo"
@@ -602,37 +600,41 @@ elif aba == "📝 Inserir Palpites":
   else:
     nome = st.text_input("Escreve o teu Nome / Alcunha:").strip()
 
+  # O formulário só abre quando houver um nome válido selecionado
   if nome:
     jogos_j = CALENDARIO_LOCAL.get(str(j_ativa), [])
-    with st.form("form_palpites"):
+    palpites_do_jogador = palpites_dados.get(nome, {})
+
+    with st.form(key=f"form_palpites_{nome}"):
       st.subheader(f"Palpites de {nome} para a Jornada {j_ativa}")
       novos_p = {}
       for jogo in jogos_j:
         id_j = jogo["id_jogo"]
 
-        # Busca o palpite antigo do jogador selecionado (se não existir, assume 0)
-        p_ant = palpites_dados.get(nome, {}).get(id_j, {"c": 0, "f": 0})
+        val_c = 0
+        val_f = 0
+        if id_j in palpites_do_jogador:
+          val_c = int(palpites_do_jogador[id_j].get("c", 0))
+          val_f = int(palpites_do_jogador[id_j].get("f", 0))
 
         col1, col2, col3, col4 = st.columns([3, 1, 1, 3])
         with col1:
           st.write(f"**{jogo['casa']}**")
         with col2:
-          # A key agora usa o NOME do jogador para forçar a atualização ao trocar de seleção
           pc = st.number_input(
               "",
               min_value=0,
               max_value=15,
-              value=p_ant["c"],
-              key=f"p_c_{nome}_{id_j}",
+              value=val_c,
+              key=f"input_c_{nome}_{id_j}",
           )
         with col3:
-          # A key agora usa o NOME do jogador
           pf = st.number_input(
               "",
               min_value=0,
               max_value=15,
-              value=p_ant["f"],
-              key=f"p_f_{nome}_{id_j}",
+              value=val_f,
+              key=f"input_f_{nome}_{id_j}",
           )
         with col4:
           st.write(f"**{jogo['fora']}**")
@@ -648,16 +650,20 @@ elif aba == "📝 Inserir Palpites":
               "f": val["f"],
           }
 
-        guardar_dados_github()
-        st.success(f"Prognósticos de {nome} guardados com sucesso!")
-        st.rerun()
-          
+        if guardar_dados_github():
+          st.success(f"Prognósticos de {nome} guardados com sucesso no GitHub!")
+          st.rerun()
+        else:
+          st.error("Erro ao guardar os dados no GitHub. Verifica o Token.")
+
 # ---------------------------------------------------------
 # ABA 3: PAINEL ADMIN
 # ---------------------------------------------------------
 elif aba == "⚙️ Painel Admin":
   st.header("⚙️ Painel de Administração")
-  sub1, sub2 = st.tabs(["⚽ Inserir Resultados", "🗑️ Gerir / Apagar Jogadores"])
+  sub1, sub2, sub3 = st.tabs(
+      ["⚽ Inserir Resultados", "🗑️ Gerir / Apagar Jogadores", "📦 Backup"]
+  )
 
   with sub1:
     lista_j = [int(k) for k in CALENDARIO_LOCAL.keys()]
@@ -703,9 +709,11 @@ elif aba == "⚙️ Painel Admin":
               "res_fora": res_f,
           }
 
-        guardar_dados_github()
-        st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
-        st.rerun()
+        if guardar_dados_github():
+          st.success(f"Resultados da Jornada {j_sel} guardados com sucesso!")
+          st.rerun()
+        else:
+          st.error("Erro ao guardar os resultados no GitHub.")
 
   with sub2:
     st.subheader("Eliminar Participante")
@@ -719,6 +727,25 @@ elif aba == "⚙️ Painel Admin":
       if st.button("❌ Eliminar Jogador"):
         if jog_del in st.session_state.palpites_dados:
           del st.session_state.palpites_dados[jog_del]
-        guardar_dados_github()
-        st.success(f"O participante '{jog_del}' foi eliminado!")
-        st.rerun()
+        if guardar_dados_github():
+          st.success(f"O participante '{jog_del}' foi eliminado!")
+          st.rerun()
+        else:
+          st.error("Erro ao atualizar o ficheiro no GitHub.")
+
+  with sub3:
+    st.subheader("📦 Cópia de Segurança dos Dados")
+    dados_backup = json.dumps(
+        {
+            "resultados": st.session_state.resultados_dados,
+            "palpites": st.session_state.palpites_dados,
+        },
+        indent=2,
+    )
+
+    st.download_button(
+        label="⬇️ Descarregar Ficheiro de Backup (.json)",
+        data=dados_backup,
+        file_name="dados_liga_backup.json",
+        mime="application/json",
+    )
