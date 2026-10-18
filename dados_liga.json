@@ -127,6 +127,38 @@
     "J4_G32": {
       "res_casa": 1,
       "res_fora": 5
+    },
+    "J5_G33": {
+      "res_casa": 0,
+      "res_fora": 2
+    },
+    "J5_G34": {
+      "res_casa": 2,
+      "res_fora": 1
+    },
+    "J5_G35": {
+      "res_casa": 4,
+      "res_fora": 1
+    },
+    "J5_G36": {
+      "res_casa": 2,
+      "res_fora": 1
+    },
+    "J5_G37": {
+      "res_casa": 1,
+      "res_fora": 1
+    },
+    "J5_G38": {
+      "res_casa": 1,
+      "res_fora": 2
+    },
+    "J5_G39": {
+      "res_casa": 2,
+      "res_fora": 0
+    },
+    "J5_G40": {
+      "res_casa": 1,
+      "res_fora": 1
     }
   },
   "palpites": {
